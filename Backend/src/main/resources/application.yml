@@ -10,12 +10,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
 
   flyway:
     enabled: true
@@ -41,6 +37,9 @@ app:
     secret: ${JWT_SECRET:change-this-to-a-256-bit-secret-in-production}
     access-token-expiry: 900000      # 15 minutes in ms
     refresh-token-expiry: 604800000  # 7 days in ms
+
+  cookie:
+    secure: false   # set true in production (requires HTTPS)
 
   aws:
     access-key: ${AWS_ACCESS_KEY_ID:}
