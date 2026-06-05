@@ -22,7 +22,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                         .authorities(user.getRoles().stream()
                                 .map(role -> "ROLE_" + role.getName())
                                 .toArray(String[]::new))
-                        .accountLocked(!user.isActive())
                         .build())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }

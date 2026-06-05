@@ -1,36 +1,56 @@
 package com.uzairtuition.auth;
 
-import com.uzairtuition.auth.dto.AuthResponse;
-import com.uzairtuition.auth.dto.AuthResult;
-import com.uzairtuition.auth.dto.LoginRequest;
+import com.uzairtuition.auth.dto.*;
 import com.uzairtuition.exception.BadRequestException;
+import com.uzairtuition.exception.ResourceNotFoundException;
 import com.uzairtuition.security.JwtService;
+import com.uzairtuition.user.Role;
+import com.uzairtuition.user.RoleRepository;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final String EMAIL_VERIFY_PREFIX = "email_verify:";
+    private static final String PWD_RESET_PREFIX    = "pwd_reset:";
+
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final PasswordEncoder passwordEncoder;
+    private final StringRedisTemplate redis;
+    private final EmailService emailService;
 
     @Value("${app.jwt.refresh-token-expiry}")
     private long refreshTokenExpiryMs;
+
+    @Value("${app.email-verify-expiry}")
+    private long emailVerifyExpiry;
+
+    @Value("${app.password-reset-expiry}")
+    private long passwordResetExpiry;
+
+    // ─── Login ───────────────────────────────────────────────────────────────
 
     @Transactional
     public AuthResult login(LoginRequest request) {
@@ -41,11 +61,76 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
-        String accessToken = jwtService.generateAccessToken(toUserDetails(user));
-        String refreshToken = createRefreshToken(user);
+        if (!user.isEmailVerified()) {
+            throw new BadRequestException("Please verify your email before logging in");
+        }
+        if (!user.isActive()) {
+            throw new BadRequestException("Your account is pending admin approval");
+        }
 
+        String accessToken  = jwtService.generateAccessToken(toUserDetails(user));
+        String refreshToken = createRefreshToken(user);
         return new AuthResult(buildResponse(accessToken, user), refreshToken);
     }
+
+    // ─── Register ────────────────────────────────────────────────────────────
+
+    @Transactional
+    public void register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new BadRequestException("Email already in use");
+        }
+
+        Role role = roleRepository.findByName(request.role())
+                .orElseThrow(() -> new BadRequestException("Invalid role: " + request.role()));
+
+        User user = User.builder()
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .email(request.email())
+                .password(passwordEncoder.encode(request.password()))
+                .phone(request.phone())
+                .active(false)
+                .emailVerified(false)
+                .approvalStatus("TEACHER".equals(request.role()) ? "PENDING" : null)
+                .roles(Set.of(role))
+                .build();
+
+        userRepository.save(user);
+
+        String token = UUID.randomUUID().toString();
+        redis.opsForValue().set(EMAIL_VERIFY_PREFIX + token,
+                String.valueOf(user.getId()), emailVerifyExpiry, TimeUnit.SECONDS);
+
+        emailService.sendVerificationEmail(user.getEmail(), token);
+    }
+
+    // ─── Verify Email ────────────────────────────────────────────────────────
+
+    @Transactional
+    public void verifyEmail(String token) {
+        String key    = EMAIL_VERIFY_PREFIX + token;
+        String userId = redis.opsForValue().get(key);
+
+        if (userId == null) {
+            throw new BadRequestException("Verification link is invalid or has expired");
+        }
+
+        User user = userRepository.findById(Long.parseLong(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User", Long.parseLong(userId)));
+
+        user.setEmailVerified(true);
+
+        // Students become active immediately; teachers wait for admin approval
+        if (user.getApprovalStatus() == null) {
+            user.setActive(true);
+        }
+
+        userRepository.save(user);
+        redis.delete(key);
+    }
+
+    // ─── Refresh Token ───────────────────────────────────────────────────────
 
     @Transactional
     public AuthResult refresh(String tokenValue) {
@@ -57,17 +142,51 @@ public class AuthService {
             throw new BadRequestException("Refresh token expired, please login again");
         }
 
-        User user = refreshToken.getUser();
+        User user        = refreshToken.getUser();
         String accessToken = jwtService.generateAccessToken(toUserDetails(user));
-
         return new AuthResult(buildResponse(accessToken, user), tokenValue);
     }
+
+    // ─── Logout ──────────────────────────────────────────────────────────────
 
     @Transactional
     public void logout(String tokenValue) {
         refreshTokenRepository.findByToken(tokenValue)
                 .ifPresent(refreshTokenRepository::delete);
     }
+
+    // ─── Forgot Password ─────────────────────────────────────────────────────
+
+    public void forgotPassword(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            String token = UUID.randomUUID().toString();
+            redis.opsForValue().set(PWD_RESET_PREFIX + token,
+                    email, passwordResetExpiry, TimeUnit.SECONDS);
+            emailService.sendPasswordResetEmail(email, token);
+        });
+        // Always return success (don't reveal if email exists)
+    }
+
+    // ─── Reset Password ──────────────────────────────────────────────────────
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        String key   = PWD_RESET_PREFIX + request.token();
+        String email = redis.opsForValue().get(key);
+
+        if (email == null) {
+            throw new BadRequestException("Reset link is invalid or has expired");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+        redis.delete(key);
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private String createRefreshToken(User user) {
         refreshTokenRepository.deleteByUser(user);
@@ -93,6 +212,7 @@ public class AuthService {
         Set<String> roles = user.getRoles().stream()
                 .map(r -> r.getName())
                 .collect(Collectors.toSet());
-        return new AuthResponse(accessToken, user.getFirstName(), user.getLastName(), user.getEmail(), roles);
+        return new AuthResponse(accessToken,
+                user.getFirstName(), user.getLastName(), user.getEmail(), roles);
     }
 }

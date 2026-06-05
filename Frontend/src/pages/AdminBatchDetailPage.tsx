@@ -1,0 +1,598 @@
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import DashboardShell from '../components/DashboardShell';
+import { ADMIN_NAV } from '../lib/adminNav';
+import api from '../lib/api';
+
+type ActiveTab = 'students' | 'sessions';
+
+interface Batch {
+  id: number; name: string; courseName: string; teacherName: string | null;
+  startDate: string; endDate: string | null; timings: string | null;
+  maxStudents: number; status: string; studentCount: number;
+}
+
+interface Student {
+  studentId: number; firstName: string; lastName: string;
+  email: string; phone: string | null; enrolledAt: string;
+}
+
+interface AllStudent {
+  id: number; firstName: string; lastName: string; email: string;
+}
+
+interface Session {
+  id: number; batchId: number; batchName: string; courseName: string;
+  title: string; sessionDate: string; startTime: string; endTime: string | null;
+  meetingUrl: string | null; meetingPlatform: string | null; createdByName: string | null;
+}
+
+interface SessionForm {
+  title: string; sessionDate: string; startTime: string;
+  endTime: string; meetingUrl: string; meetingPlatform: string;
+}
+
+const EMPTY_SESSION: SessionForm = {
+  title: '', sessionDate: '', startTime: '', endTime: '', meetingUrl: '', meetingPlatform: 'GOOGLE_MEET',
+};
+
+const PLATFORMS: { value: string; label: string; icon: string }[] = [
+  { value: 'GOOGLE_MEET', label: 'Google Meet', icon: 'video_call' },
+  { value: 'ZOOM', label: 'Zoom', icon: 'videocam' },
+  { value: 'MICROSOFT_TEAMS', label: 'Teams', icon: 'groups' },
+  { value: 'OTHER', label: 'Other', icon: 'link' },
+];
+
+function platformLabel(p: string | null) {
+  return PLATFORMS.find(x => x.value === p)?.label ?? p ?? 'Link';
+}
+
+function SessionModal({
+  initial, onClose, onSave, saving,
+}: {
+  initial: SessionForm & { id?: number };
+  onClose: () => void;
+  onSave: (f: SessionForm) => void;
+  saving: boolean;
+}) {
+  const [form, setForm] = useState<SessionForm>({ ...initial });
+  const set = (k: keyof SessionForm, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const isEdit = !!initial.id;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e4e2e6]">
+          <h2 className="font-semibold text-[#131b2e]">{isEdit ? 'Edit Session' : 'New Session'}</h2>
+          <button onClick={onClose} className="text-[#787680] hover:text-[#131b2e]">
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+        <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-[#070235] mb-1.5">Title *</label>
+            <input required type="text" value={form.title} onChange={e => set('title', e.target.value)}
+              placeholder="e.g. Chapter 3 — Algebra"
+              className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] focus:ring-2 focus:ring-[#070235]/10 transition-all" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-[#070235] mb-1.5">Date *</label>
+              <input required type="date" value={form.sessionDate} onChange={e => set('sessionDate', e.target.value)}
+                className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#070235] mb-1.5">Start *</label>
+              <input required type="time" value={form.startTime} onChange={e => set('startTime', e.target.value)}
+                className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#070235] mb-1.5">
+                End <span className="font-normal text-[#787680]">(opt.)</span>
+              </label>
+              <input type="time" value={form.endTime} onChange={e => set('endTime', e.target.value)}
+                className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#070235] mb-1.5">Platform</label>
+            <div className="grid grid-cols-4 gap-2">
+              {PLATFORMS.map(p => (
+                <button key={p.value} type="button" onClick={() => set('meetingPlatform', p.value)}
+                  className={`flex flex-col items-center gap-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${
+                    form.meetingPlatform === p.value
+                      ? 'border-[#070235] bg-[#eaedff] text-[#070235]'
+                      : 'border-[#c8c5d0] text-[#505f76] hover:bg-[#f2f3ff]'
+                  }`}>
+                  <span className="material-symbols-outlined text-[18px]">{p.icon}</span>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#070235] mb-1.5">
+              Meeting Link <span className="font-normal text-[#787680]">(optional)</span>
+            </label>
+            <input type="url" value={form.meetingUrl} onChange={e => set('meetingUrl', e.target.value)}
+              placeholder="https://meet.google.com/…"
+              className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] focus:ring-2 focus:ring-[#070235]/10 transition-all" />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="px-5 py-2.5 border border-[#c8c5d0] text-[#505f76] rounded-lg text-sm font-semibold hover:bg-[#f2f3ff] transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors disabled:opacity-60">
+              {saving && <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>}
+              {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Session'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+const STATUS_META: Record<string, { bg: string; text: string; dot: string }> = {
+  UPCOMING:  { bg: 'bg-[#d0e1fb]', text: 'text-[#0b1c30]', dot: 'bg-[#1565c0]' },
+  ACTIVE:    { bg: 'bg-[#d8f4e4]', text: 'text-[#0a3320]', dot: 'bg-[#1a6b3a]' },
+  COMPLETED: { bg: 'bg-[#e4e2e6]', text: 'text-[#47464f]', dot: 'bg-[#787680]' },
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatTime(t: string | null) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+export default function AdminBatchDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const batchId = Number(id);
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>('students');
+  const [search, setSearch] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [removeConfirm, setRemoveConfirm] = useState<number | null>(null);
+  const [enrollError, setEnrollError] = useState('');
+  const [sessionModal, setSessionModal] = useState<null | (SessionForm & { id?: number })>(null);
+  const [sessionDeleteConfirm, setSessionDeleteConfirm] = useState<number | null>(null);
+
+  const { data: batch, isLoading: batchLoading } = useQuery<Batch>({
+    queryKey: ['admin-batch', batchId],
+    queryFn: async () => { const { data } = await api.get(`/admin/batches/${batchId}`); return data; },
+    enabled: !!batchId,
+  });
+
+  const { data: students = [], isLoading: studentsLoading } = useQuery<Student[]>({
+    queryKey: ['admin-batch-students', batchId],
+    queryFn: async () => { const { data } = await api.get(`/admin/batches/${batchId}/students`); return data; },
+    enabled: !!batchId,
+  });
+
+  const { data: allStudents = [] } = useQuery<AllStudent[]>({
+    queryKey: ['students-list'],
+    queryFn: async () => { const { data } = await api.get('/admin/users?role=STUDENT'); return data; },
+  });
+
+  const { data: sessions = [], isLoading: sessionsLoading } = useQuery<Session[]>({
+    queryKey: ['admin-batch-sessions', batchId],
+    queryFn: async () => { const { data } = await api.get(`/admin/batches/${batchId}/sessions`); return data; },
+    enabled: !!batchId,
+  });
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['admin-batch-students', batchId] });
+    qc.invalidateQueries({ queryKey: ['admin-batch', batchId] });
+    qc.invalidateQueries({ queryKey: ['admin-batches'] });
+  };
+
+  const invalidateSessions = () => qc.invalidateQueries({ queryKey: ['admin-batch-sessions', batchId] });
+
+  const enrollMutation = useMutation({
+    mutationFn: (studentId: number) =>
+      api.post(`/admin/batches/${batchId}/students?studentId=${studentId}`),
+    onSuccess: () => { invalidate(); setSelectedStudentId(''); setEnrollError(''); },
+    onError: (err: any) => setEnrollError(err.response?.data?.message ?? 'Failed to enrol student.'),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (studentId: number) => api.delete(`/admin/batches/${batchId}/students/${studentId}`),
+    onSuccess: () => { invalidate(); setRemoveConfirm(null); },
+  });
+
+  const createSessionMutation = useMutation({
+    mutationFn: (f: SessionForm) => api.post(`/admin/batches/${batchId}/sessions`, {
+      title: f.title,
+      sessionDate: f.sessionDate,
+      startTime: f.startTime,
+      endTime: f.endTime || null,
+      meetingUrl: f.meetingUrl || null,
+      meetingPlatform: f.meetingPlatform || null,
+    }),
+    onSuccess: () => { invalidateSessions(); setSessionModal(null); },
+  });
+
+  const updateSessionMutation = useMutation({
+    mutationFn: ({ id, f }: { id: number; f: SessionForm }) => api.put(`/admin/sessions/${id}`, {
+      title: f.title,
+      sessionDate: f.sessionDate,
+      startTime: f.startTime,
+      endTime: f.endTime || null,
+      meetingUrl: f.meetingUrl || null,
+      meetingPlatform: f.meetingPlatform || null,
+    }),
+    onSuccess: () => { invalidateSessions(); setSessionModal(null); },
+  });
+
+  const deleteSessionMutation = useMutation({
+    mutationFn: (sessionId: number) => api.delete(`/admin/sessions/${sessionId}`),
+    onSuccess: () => { invalidateSessions(); setSessionDeleteConfirm(null); },
+  });
+
+  const handleSessionSave = (f: SessionForm) => {
+    if (sessionModal?.id) updateSessionMutation.mutate({ id: sessionModal.id, f });
+    else createSessionMutation.mutate(f);
+  };
+
+  const enrolledIds = new Set(students.map(s => s.studentId));
+  const filteredStudents = students.filter(s => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) || s.email.toLowerCase().includes(q);
+  });
+
+  const availableStudents = allStudents.filter(s => !enrolledIds.has(s.id));
+
+  if (batchLoading) {
+    return (
+      <DashboardShell navItems={ADMIN_NAV}>
+        <div className="flex items-center justify-center py-32 text-[#787680]">
+          <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>Loading…
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  if (!batch) {
+    return (
+      <DashboardShell navItems={ADMIN_NAV}>
+        <div className="flex items-center justify-center py-32 text-[#93000a]">
+          <span className="material-symbols-outlined text-[24px] mr-2">error</span>Batch not found.
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  const statusMeta = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
+
+  return (
+    <DashboardShell navItems={ADMIN_NAV}>
+      <div className="max-w-4xl mx-auto">
+        {/* Breadcrumb */}
+        <button onClick={() => navigate('/admin/batches')}
+          className="flex items-center gap-1 text-sm text-[#505f76] hover:text-[#070235] mb-6 transition-colors">
+          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+          Back to Batches
+        </button>
+
+        {/* Batch header */}
+        <div className="bg-white border border-[#c8c5d0] rounded-xl p-6 mb-6">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h1 className="font-serif text-[24px] font-semibold text-[#070235]">{batch.name}</h1>
+              <p className="text-sm text-[#505f76] mt-0.5">{batch.courseName}</p>
+            </div>
+            <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusMeta.bg} ${statusMeta.text}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
+              {batch.status.charAt(0) + batch.status.slice(1).toLowerCase()}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { icon: 'person', label: 'Teacher', value: batch.teacherName ?? 'Unassigned' },
+              { icon: 'calendar_today', label: 'Start Date', value: formatDate(batch.startDate) },
+              { icon: 'schedule', label: 'Timings', value: batch.timings ?? '—' },
+              { icon: 'group', label: 'Students', value: `${batch.studentCount} / ${batch.maxStudents}` },
+            ].map(item => (
+              <div key={item.label} className="flex items-start gap-2">
+                <span className="material-symbols-outlined text-[16px] text-[#505f76] mt-0.5">{item.icon}</span>
+                <div>
+                  <p className="text-xs text-[#787680]">{item.label}</p>
+                  <p className="text-sm font-medium text-[#131b2e]">{item.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 mb-4 bg-[#f2f3ff] p-1 rounded-xl w-fit">
+          {([
+            { key: 'students', icon: 'group', label: 'Students', count: batch.studentCount },
+            { key: 'sessions', icon: 'video_call', label: 'Sessions', count: sessions.length },
+          ] as const).map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                activeTab === tab.key
+                  ? 'bg-white text-[#070235] shadow-sm'
+                  : 'text-[#505f76] hover:text-[#070235]'
+              }`}>
+              <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+              {tab.label}
+              <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                activeTab === tab.key ? 'bg-[#eaedff] text-[#070235]' : 'bg-white/60 text-[#787680]'
+              }`}>{tab.count}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Students tab */}
+        {activeTab === 'students' && (
+          <div className="bg-white border border-[#c8c5d0] rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e4e2e6]">
+              <h2 className="font-semibold text-[#131b2e] flex items-center gap-2 mb-4">
+                <span className="material-symbols-outlined text-[18px] text-[#505f76]">group</span>
+                Enrolled Students
+                <span className="ml-1 px-2 py-0.5 bg-[#eaedff] text-[#070235] rounded-full text-xs font-medium">
+                  {batch.studentCount}
+                </span>
+              </h2>
+
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-[#070235] mb-1">Add Student</label>
+                  <select
+                    value={selectedStudentId}
+                    onChange={e => { setSelectedStudentId(e.target.value); setEnrollError(''); }}
+                    className="block w-full px-3 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+                  >
+                    <option value="">Select a student…</option>
+                    {availableStudents.map(s => (
+                      <option key={s.id} value={s.id}>{s.firstName} {s.lastName} — {s.email}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={() => { if (selectedStudentId) enrollMutation.mutate(Number(selectedStudentId)); }}
+                  disabled={!selectedStudentId || enrollMutation.isPending}
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors disabled:opacity-50"
+                >
+                  {enrollMutation.isPending
+                    ? <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
+                    : <span className="material-symbols-outlined text-[16px]">person_add</span>}
+                  Enrol
+                </button>
+              </div>
+              {enrollError && (
+                <p className="mt-2 flex items-center gap-1 text-xs text-[#ba1a1a]">
+                  <span className="material-symbols-outlined text-[14px]">error</span>{enrollError}
+                </p>
+              )}
+            </div>
+
+            {students.length > 0 && (
+              <div className="px-6 py-3 border-b border-[#e4e2e6]">
+                <div className="relative max-w-xs">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#787680]">
+                    <span className="material-symbols-outlined text-[18px]">search</span>
+                  </span>
+                  <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder="Search students…"
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all" />
+                </div>
+              </div>
+            )}
+
+            {studentsLoading ? (
+              <div className="flex items-center justify-center py-12 text-[#787680]">
+                <span className="material-symbols-outlined text-[20px] animate-spin mr-2">sync</span>
+              </div>
+            ) : filteredStudents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <span className="material-symbols-outlined text-[40px] text-[#c8c5d0] mb-2"
+                  style={{ fontVariationSettings: "'FILL' 1" }}>person_off</span>
+                <p className="text-sm text-[#787680]">
+                  {search ? 'No students match your search.' : 'No students enrolled yet.'}
+                </p>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#e4e2e6] bg-[#faf8ff]">
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Student</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Phone</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Enrolled</th>
+                    <th className="text-right px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e4e2e6]">
+                  {filteredStudents.map(s => (
+                    <tr key={s.studentId} className="hover:bg-[#faf8ff] transition-colors">
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#eaedff] flex items-center justify-center shrink-0">
+                            <span className="text-xs font-semibold text-[#070235]">
+                              {s.firstName[0]}{s.lastName[0]}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-[#131b2e]">{s.firstName} {s.lastName}</p>
+                            <p className="text-xs text-[#787680]">{s.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-[#505f76] text-xs">{s.phone ?? '—'}</td>
+                      <td className="px-5 py-3.5 text-[#505f76] text-xs">{formatDate(s.enrolledAt)}</td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex justify-end">
+                          {removeConfirm === s.studentId ? (
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => removeMutation.mutate(s.studentId)}
+                                disabled={removeMutation.isPending}
+                                className="px-2 py-1 text-xs bg-[#ba1a1a] text-white rounded-lg font-semibold">Confirm</button>
+                              <button onClick={() => setRemoveConfirm(null)}
+                                className="px-2 py-1 text-xs border border-[#c8c5d0] text-[#505f76] rounded-lg">✕</button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setRemoveConfirm(s.studentId)}
+                              className="p-1.5 text-[#787680] hover:text-[#ba1a1a] hover:bg-[#ffdad6] rounded-lg transition-colors"
+                              title="Remove from batch">
+                              <span className="material-symbols-outlined text-[16px]">person_remove</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* Sessions tab */}
+        {activeTab === 'sessions' && (
+          <div className="bg-white border border-[#c8c5d0] rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e4e2e6]">
+              <h2 className="font-semibold text-[#131b2e] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[#505f76]">video_call</span>
+                Class Sessions
+                <span className="ml-1 px-2 py-0.5 bg-[#eaedff] text-[#070235] rounded-full text-xs font-medium">
+                  {sessions.length}
+                </span>
+              </h2>
+              <button onClick={() => setSessionModal({ ...EMPTY_SESSION })}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors">
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                Add Session
+              </button>
+            </div>
+
+            {sessionsLoading ? (
+              <div className="flex items-center justify-center py-12 text-[#787680]">
+                <span className="material-symbols-outlined text-[20px] animate-spin mr-2">sync</span>
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <span className="material-symbols-outlined text-[48px] text-[#c8c5d0] mb-3"
+                  style={{ fontVariationSettings: "'FILL' 1" }}>video_call</span>
+                <p className="text-sm font-medium text-[#131b2e] mb-1">No sessions yet</p>
+                <p className="text-xs text-[#787680]">Add a class session with a meeting link for students.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-[#e4e2e6]">
+                {sessions.map(s => {
+                  const plat = PLATFORMS.find(p => p.value === s.meetingPlatform);
+                  return (
+                    <div key={s.id} className="px-6 py-4 flex items-start gap-4 hover:bg-[#faf8ff] transition-colors">
+                      {/* Date block */}
+                      <div className="shrink-0 w-12 text-center">
+                        <p className="text-[10px] font-semibold text-[#787680] uppercase tracking-wide">
+                          {new Date(s.sessionDate).toLocaleDateString('en-GB', { month: 'short' })}
+                        </p>
+                        <p className="text-xl font-bold text-[#070235] leading-none">
+                          {new Date(s.sessionDate).getDate()}
+                        </p>
+                        <p className="text-[10px] text-[#787680]">
+                          {new Date(s.sessionDate).toLocaleDateString('en-GB', { weekday: 'short' })}
+                        </p>
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="font-semibold text-[#131b2e] text-sm">{s.title}</p>
+                          {plat && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#eaedff] text-[#070235] rounded-full text-[10px] font-medium">
+                              <span className="material-symbols-outlined text-[11px]">{plat.icon}</span>
+                              {plat.label}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#505f76]">
+                          {formatTime(s.startTime)}
+                          {s.endTime ? ` — ${formatTime(s.endTime)}` : ''}
+                          {s.createdByName ? ` · Added by ${s.createdByName}` : ''}
+                        </p>
+                        {s.meetingUrl && (
+                          <a href={s.meetingUrl} target="_blank" rel="noreferrer"
+                            className="mt-1.5 inline-flex items-center gap-1 text-xs text-[#070235] font-medium hover:underline">
+                            <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                            {platformLabel(s.meetingPlatform)} Link
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => navigate(`/admin/batches/${batchId}/sessions/${s.id}/attendance`)}
+                          className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-semibold text-[#4f46e5] hover:bg-[#eef2ff] rounded-lg transition-colors"
+                          title="Mark / view attendance"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">fact_check</span>
+                          Attendance
+                        </button>
+                        <button onClick={() => setSessionModal({
+                          id: s.id, title: s.title, sessionDate: s.sessionDate,
+                          startTime: s.startTime, endTime: s.endTime ?? '',
+                          meetingUrl: s.meetingUrl ?? '', meetingPlatform: s.meetingPlatform ?? 'GOOGLE_MEET',
+                        })}
+                          className="p-1.5 text-[#787680] hover:text-[#070235] hover:bg-[#eaedff] rounded-lg transition-colors"
+                          title="Edit session">
+                          <span className="material-symbols-outlined text-[16px]">edit</span>
+                        </button>
+                        {sessionDeleteConfirm === s.id ? (
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => deleteSessionMutation.mutate(s.id)}
+                              disabled={deleteSessionMutation.isPending}
+                              className="px-2 py-1 text-xs bg-[#ba1a1a] text-white rounded-lg font-semibold">Confirm</button>
+                            <button onClick={() => setSessionDeleteConfirm(null)}
+                              className="px-2 py-1 text-xs border border-[#c8c5d0] text-[#505f76] rounded-lg">✕</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setSessionDeleteConfirm(s.id)}
+                            className="p-1.5 text-[#787680] hover:text-[#ba1a1a] hover:bg-[#ffdad6] rounded-lg transition-colors"
+                            title="Delete session">
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Session modal */}
+        {sessionModal && (
+          <SessionModal
+            initial={sessionModal}
+            onClose={() => setSessionModal(null)}
+            onSave={handleSessionSave}
+            saving={createSessionMutation.isPending || updateSessionMutation.isPending}
+          />
+        )}
+      </div>
+    </DashboardShell>
+  );
+}

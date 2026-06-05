@@ -1,8 +1,6 @@
 package com.uzairtuition.auth;
 
-import com.uzairtuition.auth.dto.AuthResponse;
-import com.uzairtuition.auth.dto.AuthResult;
-import com.uzairtuition.auth.dto.LoginRequest;
+import com.uzairtuition.auth.dto.*;
 import com.uzairtuition.exception.BadRequestException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -14,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,14 +34,39 @@ public class AuthController {
         return ResponseEntity.ok(result.response());
     }
 
+    @PostMapping("/register")
+    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody RegisterRequest request) {
+        authService.register(request);
+        return ResponseEntity.ok(Map.of("message",
+                "Registration successful. Please check your email to verify your account."));
+    }
+
+    @GetMapping("/verify-email")
+    public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity.ok(Map.of("message", "Email verified successfully. You can now login."));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.email());
+        return ResponseEntity.ok(Map.of("message",
+                "If this email is registered, a password reset link has been sent."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(Map.of("message", "Password reset successfully. You can now login."));
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(
             @CookieValue(name = REFRESH_TOKEN_COOKIE, required = false) String refreshToken,
             HttpServletResponse response) {
-
-        if (refreshToken == null) {
-            throw new BadRequestException("Refresh token cookie missing");
-        }
+        if (refreshToken == null) throw new BadRequestException("Refresh token cookie missing");
         AuthResult result = authService.refresh(refreshToken);
         setRefreshTokenCookie(response, result.refreshToken());
         return ResponseEntity.ok(result.response());
@@ -52,10 +76,7 @@ public class AuthController {
     public ResponseEntity<Void> logout(
             @CookieValue(name = REFRESH_TOKEN_COOKIE, required = false) String refreshToken,
             HttpServletResponse response) {
-
-        if (refreshToken != null) {
-            authService.logout(refreshToken);
-        }
+        if (refreshToken != null) authService.logout(refreshToken);
         clearRefreshTokenCookie(response);
         return ResponseEntity.noContent().build();
     }

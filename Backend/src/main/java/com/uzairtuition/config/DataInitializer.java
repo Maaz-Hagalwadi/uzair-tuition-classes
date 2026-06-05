@@ -41,6 +41,7 @@ public class DataInitializer implements ApplicationRunner {
                 .email("admin@uzairtuition.com")
                 .password(passwordEncoder.encode("Admin@123"))
                 .active(true)
+                .emailVerified(true)
                 .roles(Set.of(adminRole))
                 .build();
 

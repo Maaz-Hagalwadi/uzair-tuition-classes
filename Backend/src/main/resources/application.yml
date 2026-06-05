@@ -18,6 +18,15 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1026}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
+
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -30,7 +39,7 @@ spring:
       max-request-size: 50MB
 
 server:
-  port: 8080
+  port: 8090
 
 app:
   jwt:
@@ -38,15 +47,19 @@ app:
     access-token-expiry: 900000      # 15 minutes in ms
     refresh-token-expiry: 604800000  # 7 days in ms
 
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  email-verify-expiry: 86400    # 24 hours in seconds
+  password-reset-expiry: 900    # 15 minutes in seconds
+
   cookie:
     secure: false   # set true in production (requires HTTPS)
 
   aws:
-    access-key: ${AWS_ACCESS_KEY_ID:}
-    secret-key: ${AWS_SECRET_ACCESS_KEY:}
-    region: ${AWS_REGION:ap-south-1}
+    access-key: ${AWS_ACCESS_KEY_ID:AKIAUGP5NVNRBN4RD6V6}
+    secret-key: ${AWS_SECRET_ACCESS_KEY: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}
+    region: ${AWS_REGION:eu-north-1}
     s3:
-      bucket: ${S3_BUCKET_NAME:uzair-lms-files}
+      bucket: ${S3_BUCKET_NAME:bidforge-storage-2026}
 
 management:
   endpoints:
