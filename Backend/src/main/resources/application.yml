@@ -40,8 +40,8 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID:868605528515-u148cf86ocsnu106hg5auf7nsegre8or.apps.googleusercontent.com}
-            client-secret: ${GOOGLE_CLIENT_SECRET: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}
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: openid, profile, email
 
   servlet:
@@ -54,7 +54,7 @@ server:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:change-this-to-a-256-bit-secret-in-production}
+    secret: ${JWT_SECRET}
     access-token-expiry: 900000      # 15 minutes in ms
     refresh-token-expiry: 604800000  # 7 days in ms
 
@@ -63,17 +63,17 @@ app:
   password-reset-expiry: 900    # 15 minutes in seconds
 
   cookie:
-    secure: false   # set true in production (requires HTTPS)
+    secure: ${COOKIE_SECURE:false}
 
   groq:
-    api-key: ${GROQ_API_KEY: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}
+    api-key: ${GROQ_API_KEY}
 
   aws:
-    access-key: ${AWS_ACCESS_KEY_ID:AKIAUGP5NVNRBN4RD6V6}
-    secret-key: ${AWS_SECRET_ACCESS_KEY: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}
+    access-key: ${AWS_ACCESS_KEY_ID}
+    secret-key: ${AWS_SECRET_ACCESS_KEY}
     region: ${AWS_REGION:eu-north-1}
     s3:
-      bucket: ${S3_BUCKET_NAME:bidforge-storage-2026}
+      bucket: ${S3_BUCKET_NAME}
 
 management:
   endpoints:
