@@ -25,15 +25,15 @@ interface Batch {
   status: string;
 }
 
-const MONTHS     = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const MONTHS_S   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAYS       = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS_L = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS     = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-const PLATFORM_META: Record<string, { label: string; color: string }> = {
-  GOOGLE_MEET:     { label: 'Google Meet',    color: '#059669' },
-  ZOOM:            { label: 'Zoom',            color: '#2563eb' },
-  MICROSOFT_TEAMS: { label: 'Microsoft Teams', color: '#7c3aed' },
-  OTHER:           { label: 'Online',          color: '#64748b' },
+const PLATFORM_META: Record<string, { label: string; color: string; bg: string }> = {
+  GOOGLE_MEET:     { label: 'Google Meet',    color: '#059669', bg: '#f0fdf4' },
+  ZOOM:            { label: 'Zoom',           color: '#2563eb', bg: '#eff6ff' },
+  MICROSOFT_TEAMS: { label: 'Teams',          color: '#7c3aed', bg: '#f5f3ff' },
+  OTHER:           { label: 'Online',         color: '#64748b', bg: '#f8fafc' },
 };
 
 function formatTime(t: string) {
@@ -41,23 +41,17 @@ function formatTime(t: string) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 }
 
-function parseDateLabel(dateStr: string): { heading: string; subheading: string; isToday: boolean; isTomorrow: boolean; dayNum: number; month: string } {
+function parseDateLabel(dateStr: string) {
   const d     = new Date(dateStr + 'T00:00:00');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
-
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff  = Math.round((d.getTime() - today.getTime()) / 86400000);
   const dayNum  = d.getDate();
   const month   = MONTHS_S[d.getMonth()];
   const dayName = DAYS[d.getDay()];
-  const year    = d.getFullYear();
-  const thisYear = today.getFullYear();
-
-  const dateLine = `${dayName}, ${MONTHS[d.getMonth()]} ${dayNum}${year !== thisYear ? `, ${year}` : ''}`;
-
-  if (diff === 0) return { heading: 'Today',    subheading: dateLine, isToday: true,  isTomorrow: false, dayNum, month };
-  if (diff === 1) return { heading: 'Tomorrow', subheading: dateLine, isToday: false, isTomorrow: true,  dayNum, month };
-  return           { heading: dateLine,          subheading: '',       isToday: false, isTomorrow: false, dayNum, month };
+  const full    = `${dayName}, ${MONTHS_L[d.getMonth()]} ${dayNum}`;
+  if (diff === 0) return { heading: 'Today',    sub: full, isToday: true,  isTomorrow: false, dayNum, month };
+  if (diff === 1) return { heading: 'Tomorrow', sub: full, isToday: false, isTomorrow: true,  dayNum, month };
+  return           { heading: full,             sub: '',   isToday: false, isTomorrow: false, dayNum, month };
 }
 
 function groupByDate(sessions: Session[]): [string, Session[]][] {
@@ -72,15 +66,16 @@ function groupByDate(sessions: Session[]): [string, Session[]][] {
 
 export default function StudentSchedulePage() {
   const [batchFilter, setBatchFilter] = useState<number | 'ALL'>('ALL');
+  const [expanded, setExpanded]       = useState<Set<number>>(new Set());
 
   const { data: batches = [] } = useQuery<Batch[]>({
     queryKey: ['student-batches'],
-    queryFn: async () => { const { data } = await api.get('/student/batches'); return data; },
+    queryFn: async () => (await api.get('/student/batches')).data,
   });
 
   const { data: sessions = [], isLoading } = useQuery<Session[]>({
     queryKey: ['student-upcoming-sessions'],
-    queryFn: async () => { const { data } = await api.get('/student/sessions/upcoming'); return data; },
+    queryFn: async () => (await api.get('/student/sessions/upcoming')).data,
   });
 
   const filtered = useMemo(() =>
@@ -90,94 +85,95 @@ export default function StudentSchedulePage() {
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
 
-  const todayStr    = new Date().toISOString().slice(0, 10);
-  const todayCount  = sessions.filter(s => s.sessionDate === todayStr).length;
+  const todayStr   = new Date().toISOString().slice(0, 10);
+  const todayCount = sessions.filter(s => s.sessionDate === todayStr).length;
+
+  function toggleExpand(id: number) {
+    setExpanded(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  }
 
   return (
     <DashboardShell navItems={STUDENT_NAV}>
-      <div className="max-w-2xl mx-auto space-y-4">
+      <div className="max-w-6xl mx-auto space-y-5">
 
         {/* ── Header ── */}
         <div>
-          <h1 className="font-['Source_Serif_4'] text-[28px] font-semibold text-[#0f172a] leading-tight">
-            My Schedule
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <p className="text-[13px] text-[#64748b]">Your upcoming class sessions</p>
-            {!isLoading && sessions.length > 0 && (
-              <>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#eef2ff] text-[#4f46e5]">
-                  <span className="material-symbols-outlined text-[12px]">event</span>
-                  {sessions.length} upcoming
-                </span>
-                {todayCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#fffbeb] text-[#92400e]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse" />
-                    {todayCount} today
-                  </span>
-                )}
-              </>
-            )}
-          </div>
+          <h1 className="font-['Source_Serif_4'] text-[20px] sm:text-[28px] font-semibold text-[#0f172a] leading-tight">My Schedule</h1>
+          <p className="text-[11px] sm:text-[13px] text-[#64748b] mt-0.5">Your upcoming class sessions</p>
         </div>
 
-        {/* ── Batch filter ── */}
-        {batches.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+        {/* ── Controls ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+          {/* Batch filter */}
+          <div className="flex border border-[#e2e8f0] rounded-xl overflow-hidden bg-white">
             {([{ id: 'ALL' as const, name: 'All Batches' }, ...batches] as { id: number | 'ALL'; name: string }[]).map(b => (
               <button
-                key={b.id}
+                key={String(b.id)}
                 onClick={() => setBatchFilter(b.id as number | 'ALL')}
-                className={`px-3.5 py-1.5 rounded-lg text-[12px] font-medium transition-all border ${
+                className={`px-4 py-2 text-[12px] font-medium border-r last:border-r-0 border-[#e2e8f0] transition-colors ${
                   batchFilter === b.id
-                    ? 'bg-[#0f172a] text-white border-[#0f172a] shadow-sm'
-                    : 'bg-white text-[#64748b] border-[#e2e8f0] hover:border-[#94a3b8] hover:text-[#374151]'
+                    ? 'bg-[#0d1b3e] text-white'
+                    : 'text-[#6b7280] hover:bg-[#f8fafc]'
                 }`}
               >
                 {b.name}
               </button>
             ))}
           </div>
-        )}
+
+          {/* Summary pills */}
+          {!isLoading && sessions.length > 0 && (
+            <div className="flex items-center gap-2 sm:ml-auto">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#eef2ff] text-[#4f46e5] text-[11px] font-semibold">
+                <span className="material-symbols-outlined text-[11px]">event</span>
+                {sessions.length} upcoming
+              </span>
+              {todayCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#fffbeb] text-[#92400e] text-[11px] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse" />
+                  {todayCount} today
+                </span>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* ── Content ── */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#94a3b8]">
-            <span className="material-symbols-outlined text-[32px] animate-spin mb-3">sync</span>
+          <div className="flex flex-col items-center justify-center py-32 text-[#94a3b8]">
+            <span className="material-symbols-outlined text-[30px] animate-spin mb-2">sync</span>
             <p className="text-[13px]">Loading sessions…</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#94a3b8]">
-            <div className="w-16 h-16 rounded-2xl bg-[#f8fafc] border border-[#e2e8f0] flex items-center justify-center mb-4">
-              <span className="material-symbols-outlined text-[30px] text-[#cbd5e1]" style={{ fontVariationSettings: "'FILL' 1" }}>event_busy</span>
+          <div className="flex flex-col items-center justify-center py-32 text-[#94a3b8]">
+            <div className="w-14 h-14 rounded-2xl bg-[#f1f5f9] flex items-center justify-center mb-3">
+              <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>event_busy</span>
             </div>
-            <p className="text-[15px] font-semibold text-[#374151]">No upcoming sessions</p>
-            <p className="text-[12px] text-[#94a3b8] mt-1.5 text-center max-w-[240px]">
-              {batchFilter !== 'ALL' ? 'Try switching to All Batches to see all your sessions.' : 'Your teacher will add sessions here once they\'re scheduled.'}
+            <p className="text-[13px] font-semibold text-[#374151]">No upcoming sessions</p>
+            <p className="text-[12px] text-[#94a3b8] mt-1">
+              {batchFilter !== 'ALL' ? 'Try switching to All Batches' : 'Your teacher will schedule sessions here'}
             </p>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {grouped.map(([dateStr, daySessions]) => {
-              const { heading, subheading, isToday, isTomorrow } = parseDateLabel(dateStr);
+              const { heading, sub, isToday, isTomorrow, dayNum, month } = parseDateLabel(dateStr);
 
               return (
                 <div key={dateStr}>
 
-                  {/* ── Date section header ── */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="flex items-center gap-2.5 shrink-0">
-                      {isToday && (
-                        <span className="w-2 h-2 rounded-full bg-[#f59e0b] animate-pulse shrink-0" />
-                      )}
-                      <div>
-                        <span className={`text-[14px] font-bold ${isToday ? 'text-[#92400e]' : isTomorrow ? 'text-[#1d4ed8]' : 'text-[#0f172a]'}`}>
-                          {heading}
-                        </span>
-                        {subheading && (
-                          <span className="ml-2 text-[12px] text-[#94a3b8]">{subheading}</span>
-                        )}
-                      </div>
+                  {/* ── Date header ── */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isToday && <span className="w-2 h-2 rounded-full bg-[#f59e0b] animate-pulse" />}
+                      <span className={`text-[13px] font-bold ${
+                        isToday ? 'text-[#92400e]' : isTomorrow ? 'text-[#1d4ed8]' : 'text-[#0f172a]'
+                      }`}>{heading}</span>
+                      {sub && <span className="text-[12px] text-[#94a3b8]">{sub}</span>}
                     </div>
                     <div className="flex-1 h-px bg-[#f1f5f9]" />
                     <span className="text-[11px] text-[#94a3b8] shrink-0">
@@ -186,91 +182,124 @@ export default function StudentSchedulePage() {
                   </div>
 
                   {/* ── Session rows ── */}
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {daySessions.map(session => {
                       const platform = PLATFORM_META[session.meetingPlatform] ?? PLATFORM_META.OTHER;
+                      const isOpen   = expanded.has(session.id);
+
                       return (
-                        <div key={session.id} className="flex items-start gap-3">
+                        <div key={session.id} className={`bg-white rounded-2xl border overflow-hidden hover:shadow-sm transition-shadow ${
+                          isToday ? 'border-[#fde68a]' : 'border-[#e2e8f0]'
+                        }`}>
 
-                          {/* Time column */}
-                          <div className="w-[68px] shrink-0 text-right pt-3">
-                            <p className="text-[12px] font-bold text-[#0f172a]">{formatTime(session.startTime)}</p>
-                            {session.endTime && (
-                              <p className="text-[10px] text-[#94a3b8] mt-0.5">{formatTime(session.endTime)}</p>
-                            )}
-                          </div>
+                          {/* Collapsed row */}
+                          <div className="flex items-center gap-4 px-5 py-4">
 
-                          {/* Dot */}
-                          <div className="flex flex-col items-center pt-3.5 shrink-0">
-                            <div className={`w-2 h-2 rounded-full ring-2 ring-white ring-offset-1 ${
-                              isToday ? 'bg-[#f59e0b]' : 'bg-[#6366f1]'
-                            }`} />
-                          </div>
-
-                          {/* Card */}
-                          <div className="flex-1 min-w-0">
-                            <div className={`rounded-xl border px-4 py-3 hover:shadow-md transition-all group ${
-                              isToday
-                                ? 'bg-[#fffdf5] border-[#fde68a] hover:border-[#fbbf24]'
-                                : 'bg-white border-[#e2e8f0] hover:border-[#c7d2fe]'
+                            {/* Date chip */}
+                            <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0 ${
+                              isToday ? 'bg-[#fffbeb]' : 'bg-[#f1f5f9]'
                             }`}>
-                              <div className="flex items-start justify-between gap-3">
+                              <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-[#d97706]' : 'text-[#6b7280]'}`}>{month}</span>
+                              <span className={`text-[15px] font-black leading-none ${isToday ? 'text-[#92400e]' : 'text-[#0f172a]'}`}>{dayNum}</span>
+                            </div>
 
-                                {/* Info */}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[13px] font-bold text-[#0f172a] leading-snug">{session.title}</p>
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[14px] font-semibold text-[#0f172a] leading-snug truncate">{session.title}</p>
+                              <p className="text-[12px] text-[#64748b] mt-0.5 truncate">
+                                {session.batchName} · {session.courseName}
+                              </p>
+                            </div>
 
-                                  <div className="flex flex-wrap items-center gap-x-1 mt-0.5">
-                                    <span className="text-[11px] font-medium text-[#6366f1]">{session.batchName}</span>
-                                    <span className="text-[#e2e8f0]">·</span>
-                                    <span className="text-[11px] text-[#64748b]">{session.courseName}</span>
-                                  </div>
+                            {/* Time badge */}
+                            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f1f5f9] text-[#374151] text-[11px] font-semibold shrink-0">
+                              <span className="material-symbols-outlined text-[12px]">schedule</span>
+                              {formatTime(session.startTime)}
+                              {session.endTime && ` – ${formatTime(session.endTime)}`}
+                            </span>
 
-                                  <div className="flex flex-wrap items-center gap-3 mt-1.5">
-                                    {session.createdByName && (
-                                      <span className="inline-flex items-center gap-1 text-[11px] text-[#94a3b8]">
-                                        <span className="material-symbols-outlined text-[12px]">person</span>
-                                        {session.createdByName}
-                                      </span>
-                                    )}
-                                    <span
-                                      className="inline-flex items-center gap-1 text-[11px] font-medium"
-                                      style={{ color: platform.color }}
-                                    >
-                                      <span className="material-symbols-outlined text-[12px]">videocam</span>
-                                      {platform.label}
-                                    </span>
-                                  </div>
+                            {/* Join button (if URL exists) */}
+                            {session.meetingUrl && (
+                              <a
+                                href={session.meetingUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white hover:opacity-90 transition-all"
+                                style={{ background: 'linear-gradient(135deg,#0d1b3e,#1a2f5a)' }}
+                              >
+                                <span className="material-symbols-outlined text-[12px]">videocam</span>
+                                Join
+                              </a>
+                            )}
+
+                            {/* Details toggle */}
+                            <button
+                              onClick={() => toggleExpand(session.id)}
+                              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
+                                isOpen
+                                  ? 'bg-[#f1f5f9] border-[#e2e8f0] text-[#374151]'
+                                  : 'bg-white border-[#e2e8f0] text-[#374151] hover:bg-[#f8fafc]'
+                              }`}
+                            >
+                              Details
+                              <span className="material-symbols-outlined text-[14px] transition-transform duration-200"
+                                style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                                expand_more
+                              </span>
+                            </button>
+                          </div>
+
+                          {/* Expanded panel */}
+                          {isOpen && (
+                            <div className="border-t border-[#f1f5f9] px-5 py-4 bg-[#fafbff]">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                <div>
+                                  <p className="text-[10px] font-semibold text-[#9ca3af] uppercase tracking-wider mb-1">Time</p>
+                                  <p className="text-[12px] font-semibold text-[#374151]">
+                                    {formatTime(session.startTime)}
+                                    {session.endTime && ` – ${formatTime(session.endTime)}`}
+                                  </p>
                                 </div>
-
-                                {/* Join */}
-                                {session.meetingUrl ? (
-                                  <a
-                                    href={session.meetingUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold text-white shrink-0 hover:opacity-90 active:scale-95 transition-all"
-                                    style={{ background: 'linear-gradient(135deg, #0d1b3e 0%, #1a2f5a 100%)' }}
-                                  >
-                                    <span className="material-symbols-outlined text-[13px]">videocam</span>
-                                    Join
-                                  </a>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 text-[11px] text-[#cbd5e1] shrink-0 pt-1">
-                                    <span className="material-symbols-outlined text-[13px]">link_off</span>
-                                    No link yet
-                                  </span>
+                                <div>
+                                  <p className="text-[10px] font-semibold text-[#9ca3af] uppercase tracking-wider mb-1">Batch</p>
+                                  <p className="text-[12px] font-semibold text-[#374151]">{session.batchName}</p>
+                                </div>
+                                {session.createdByName && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-[#9ca3af] uppercase tracking-wider mb-1">Teacher</p>
+                                    <p className="text-[12px] font-semibold text-[#374151]">{session.createdByName}</p>
+                                  </div>
                                 )}
-
+                                <div>
+                                  <p className="text-[10px] font-semibold text-[#9ca3af] uppercase tracking-wider mb-1">Platform</p>
+                                  <span className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-0.5 rounded-full"
+                                    style={{ backgroundColor: platform.bg, color: platform.color }}>
+                                    <span className="material-symbols-outlined text-[12px]">videocam</span>
+                                    {platform.label}
+                                  </span>
+                                </div>
+                                {session.meetingUrl && (
+                                  <div className="col-span-2 sm:col-span-4">
+                                    <p className="text-[10px] font-semibold text-[#9ca3af] uppercase tracking-wider mb-1">Meeting Link</p>
+                                    <a
+                                      href={session.meetingUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold text-white hover:opacity-90 transition-all"
+                                      style={{ background: 'linear-gradient(135deg,#0d1b3e,#1a2f5a)' }}
+                                    >
+                                      <span className="material-symbols-outlined text-[13px]">videocam</span>
+                                      Join Session
+                                    </a>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </div>
-
+                          )}
                         </div>
                       );
                     })}
                   </div>
-
                 </div>
               );
             })}

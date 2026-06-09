@@ -206,14 +206,14 @@ export default function AdminPaymentsPage() {
     <DashboardShell navItems={ADMIN_NAV}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
           <div>
-            <h1 className="text-[22px] font-bold text-[#1e1b4b]">Payments</h1>
-            <p className="text-sm text-[#6b7280] mt-0.5">Track student fee payments</p>
+            <h1 className="text-[18px] sm:text-[22px] font-bold text-[#1e1b4b]">Payments</h1>
+            <p className="text-[11px] sm:text-sm text-[#6b7280] mt-0.5">Track student fee payments</p>
           </div>
           <button onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#1e1b4b] text-white rounded-lg text-sm font-medium hover:opacity-90">
-            <span className="material-symbols-outlined text-[16px]">add</span>Add Payment
+            className="w-fit self-end sm:self-auto flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#1e1b4b] text-white rounded-lg text-[12px] sm:text-sm font-medium hover:opacity-90">
+            <span className="material-symbols-outlined text-[14px] sm:text-[16px]">add</span>Add Payment
           </button>
         </div>
 
@@ -231,15 +231,17 @@ export default function AdminPaymentsPage() {
 
         {/* Filter + Search */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="flex gap-1 bg-[#f3f4f6] p-1 rounded-lg w-fit">
-            {tabs.map(t => (
-              <button key={t.key} onClick={() => setFilter(t.key)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  filter === t.key ? 'bg-white text-[#1e1b4b] shadow-sm' : 'text-[#6b7280] hover:text-[#374151]'
-                }`}>
-                {t.label}
-              </button>
-            ))}
+          <div className="overflow-x-auto">
+            <div className="flex gap-1 bg-[#f3f4f6] p-1 rounded-lg w-fit">
+              {tabs.map(t => (
+                <button key={t.key} onClick={() => setFilter(t.key)}
+                  className={`whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    filter === t.key ? 'bg-white text-[#1e1b4b] shadow-sm' : 'text-[#6b7280] hover:text-[#374151]'
+                  }`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="relative flex-1 max-w-xs">
             <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#9ca3af]">
@@ -251,7 +253,7 @@ export default function AdminPaymentsPage() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table / Cards */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-[#6b7280]">
             <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>Loading…
@@ -262,55 +264,94 @@ export default function AdminPaymentsPage() {
             <p className="text-sm font-medium">No payment records</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-[#e4e2e6] overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#f9fafb] text-[#9ca3af] text-xs uppercase tracking-wide border-b border-[#f3f4f6]">
-                  <th className="text-left px-5 py-3 font-medium">Student</th>
-                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Batch</th>
-                  <th className="text-left px-4 py-3 font-medium">Amount</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
-                  <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Date</th>
-                  <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Notes</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#f3f4f6]">
-                {filtered.map(p => {
-                  const meta = STATUS_META[p.status] ?? STATUS_META.PENDING;
-                  return (
-                    <tr key={p.id} className="hover:bg-[#fafafa] transition-colors">
-                      <td className="px-5 py-3">
-                        <p className="font-medium text-[#374151]">{p.studentName}</p>
-                      </td>
-                      <td className="px-4 py-3 text-[#6b7280] text-xs hidden sm:table-cell">{p.batchName}</td>
-                      <td className="px-4 py-3 font-semibold text-[#1e1b4b]">{fmtAmount(p.amount)}</td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={p.status}
-                          onChange={e => updateStatusMutation.mutate({ id: p.id, status: e.target.value })}
-                          className="text-xs font-semibold px-2 py-1 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-[#6366f1]/30 cursor-pointer"
-                          style={{ backgroundColor: meta.bg, color: meta.text }}
-                        >
-                          {VALID_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[#9ca3af] hidden md:table-cell">{fmtDate(p.paymentDate)}</td>
-                      <td className="px-4 py-3 text-xs text-[#6b7280] hidden lg:table-cell max-w-[150px] truncate">{p.notes ?? '—'}</td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => { if (window.confirm('Delete this payment record?')) deleteMutation.mutate(p.id); }}
-                          className="text-[#9ca3af] hover:text-[#ef4444] transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">delete</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-3">
+              {filtered.map(p => {
+                const meta = STATUS_META[p.status] ?? STATUS_META.PENDING;
+                return (
+                  <div key={p.id} className="bg-white rounded-xl border border-[#e4e2e6] p-4 space-y-3">
+                    {/* Student + batch */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-[13px] font-semibold text-[#374151]">{p.studentName}</p>
+                        <p className="text-[11px] text-[#6b7280]">{p.batchName}</p>
+                      </div>
+                      <p className="text-[14px] font-bold text-[#1e1b4b] shrink-0">{fmtAmount(p.amount)}</p>
+                    </div>
+                    {/* Status select + delete */}
+                    <div className="flex items-center justify-between gap-2">
+                      <select
+                        value={p.status}
+                        onChange={e => updateStatusMutation.mutate({ id: p.id, status: e.target.value })}
+                        className="text-xs font-semibold px-2 py-1 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-[#6366f1]/30 cursor-pointer"
+                        style={{ backgroundColor: meta.bg, color: meta.text }}
+                      >
+                        {VALID_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                      <button
+                        onClick={() => { if (window.confirm('Delete this payment record?')) deleteMutation.mutate(p.id); }}
+                        className="text-[#9ca3af] hover:text-[#ef4444] transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden sm:block bg-white rounded-xl border border-[#e4e2e6] overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#f9fafb] text-[#9ca3af] text-xs uppercase tracking-wide border-b border-[#f3f4f6]">
+                    <th className="text-left px-5 py-3 font-medium">Student</th>
+                    <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Batch</th>
+                    <th className="text-left px-4 py-3 font-medium">Amount</th>
+                    <th className="text-left px-4 py-3 font-medium">Status</th>
+                    <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Date</th>
+                    <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Notes</th>
+                    <th className="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f3f4f6]">
+                  {filtered.map(p => {
+                    const meta = STATUS_META[p.status] ?? STATUS_META.PENDING;
+                    return (
+                      <tr key={p.id} className="hover:bg-[#fafafa] transition-colors">
+                        <td className="px-5 py-3">
+                          <p className="font-medium text-[#374151]">{p.studentName}</p>
+                        </td>
+                        <td className="px-4 py-3 text-[#6b7280] text-xs hidden sm:table-cell">{p.batchName}</td>
+                        <td className="px-4 py-3 font-semibold text-[#1e1b4b]">{fmtAmount(p.amount)}</td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={p.status}
+                            onChange={e => updateStatusMutation.mutate({ id: p.id, status: e.target.value })}
+                            className="text-xs font-semibold px-2 py-1 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-[#6366f1]/30 cursor-pointer"
+                            style={{ backgroundColor: meta.bg, color: meta.text }}
+                          >
+                            {VALID_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#9ca3af] hidden md:table-cell">{fmtDate(p.paymentDate)}</td>
+                        <td className="px-4 py-3 text-xs text-[#6b7280] hidden lg:table-cell max-w-[150px] truncate">{p.notes ?? '—'}</td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => { if (window.confirm('Delete this payment record?')) deleteMutation.mutate(p.id); }}
+                            className="text-[#9ca3af] hover:text-[#ef4444] transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

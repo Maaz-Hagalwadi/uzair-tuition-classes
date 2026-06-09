@@ -32,6 +32,17 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6380}
       password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL:false}
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:868605528515-u148cf86ocsnu106hg5auf7nsegre8or.apps.googleusercontent.com}
+            client-secret: ${GOOGLE_CLIENT_SECRET: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}
+            scope: openid, profile, email
 
   servlet:
     multipart:
@@ -39,7 +50,7 @@ spring:
       max-request-size: 50MB
 
 server:
-  port: 8090
+  port: ${PORT:8090}
 
 app:
   jwt:
@@ -53,6 +64,9 @@ app:
 
   cookie:
     secure: false   # set true in production (requires HTTPS)
+
+  groq:
+    api-key: ${GROQ_API_KEY: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}
 
   aws:
     access-key: ${AWS_ACCESS_KEY_ID:AKIAUGP5NVNRBN4RD6V6}

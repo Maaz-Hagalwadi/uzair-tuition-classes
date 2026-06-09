@@ -20,17 +20,25 @@ interface Batch {
 type StatusFilter = 'ALL' | 'UPCOMING' | 'ACTIVE' | 'COMPLETED';
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
-  { key: 'ALL', label: 'All' },
-  { key: 'UPCOMING', label: 'Upcoming' },
-  { key: 'ACTIVE', label: 'Active' },
+  { key: 'ALL',       label: 'All' },
+  { key: 'UPCOMING',  label: 'Upcoming' },
+  { key: 'ACTIVE',    label: 'Active' },
   { key: 'COMPLETED', label: 'Completed' },
 ];
 
-const STATUS_META: Record<string, { bg: string; text: string }> = {
-  UPCOMING:  { bg: '#eff6ff', text: '#1d4ed8' },
-  ACTIVE:    { bg: '#f0fdf4', text: '#15803d' },
-  COMPLETED: { bg: '#f9fafb', text: '#6b7280' },
+const STATUS_META: Record<string, { bg: string; text: string; dot: string }> = {
+  UPCOMING:  { bg: '#eff6ff', text: '#1d4ed8', dot: '#3b82f6' },
+  ACTIVE:    { bg: '#f0fdf4', text: '#15803d', dot: '#16a34a' },
+  COMPLETED: { bg: '#f9fafb', text: '#6b7280', dot: '#9ca3af' },
 };
+
+const BATCH_GRADIENTS = [
+  'from-[#6366f1] to-[#8b5cf6]',
+  'from-[#0ea5e9] to-[#6366f1]',
+  'from-[#f59e0b] to-[#ef4444]',
+  'from-[#10b981] to-[#0ea5e9]',
+  'from-[#ec4899] to-[#f59e0b]',
+];
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -49,105 +57,170 @@ export default function TeacherBatchesPage() {
 
   return (
     <DashboardShell navItems={TEACHER_NAV}>
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto space-y-5">
+
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-[22px] font-bold text-[#1e1b4b]">My Batches</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Your assigned teaching batches</p>
+        <div>
+          <h1 className="font-['Source_Serif_4'] text-[20px] sm:text-[28px] font-semibold text-[#0f172a] leading-tight">My Batches</h1>
+          <p className="text-[11px] sm:text-[13px] text-[#64748b] mt-0.5">Your assigned teaching batches</p>
         </div>
 
-        {/* Status tabs */}
-        <div className="flex gap-1 bg-[#f3f4f6] p-1 rounded-lg mb-6 w-fit">
-          {STATUS_TABS.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                tab === t.key
-                  ? 'bg-white text-[#1e1b4b] shadow-sm'
-                  : 'text-[#6b7280] hover:text-[#374151]'
-              }`}
-            >
-              {t.label}
-              {t.key !== 'ALL' && (
-                <span className="ml-1.5 text-xs text-[#9ca3af]">
-                  ({batches.filter(b => b.status === t.key).length})
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {isLoading && (
-          <div className="flex items-center justify-center py-20 text-[#6b7280]">
-            <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-            Loading batches…
-          </div>
-        )}
-
-        {!isLoading && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-[#9ca3af]">
-            <span className="material-symbols-outlined text-[48px] mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
-            <p className="text-sm font-medium">No {tab !== 'ALL' ? tab.toLowerCase() + ' ' : ''}batches assigned</p>
-          </div>
-        )}
-
-        {!isLoading && filtered.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filtered.map(batch => {
-              const meta = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
-              const pct = batch.maxStudents > 0 ? Math.round((batch.studentCount / batch.maxStudents) * 100) : 0;
+        {/* Pill tabs — scrollable on mobile */}
+        <div className="overflow-x-auto pb-1">
+          <div className="flex gap-1.5 min-w-max">
+            {STATUS_TABS.map(t => {
+              const count = t.key === 'ALL' ? batches.length : batches.filter(b => b.status === t.key).length;
               return (
                 <button
-                  key={batch.id}
-                  onClick={() => navigate(`/teacher/batches/${batch.id}`)}
-                  className="bg-white rounded-xl border border-[#e4e2e6] p-5 text-left hover:border-[#6366f1] hover:shadow-md transition-all group"
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all ${
+                    tab === t.key
+                      ? 'bg-[#0f172a] text-white shadow-sm'
+                      : 'bg-[#f1f5f9] text-[#6b7280] hover:bg-[#e2e8f0] hover:text-[#374151]'
+                  }`}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-[#1e1b4b] text-sm leading-snug group-hover:text-[#6366f1] transition-colors pr-2">
-                      {batch.name}
-                    </h3>
-                    <span
-                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0"
-                      style={{ backgroundColor: meta.bg, color: meta.text }}
-                    >
-                      {batch.status}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-[#6b7280] mb-4">{batch.courseName}</p>
-
-                  {/* Student fill bar */}
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between text-xs text-[#9ca3af] mb-1">
-                      <span>{batch.studentCount} students</span>
-                      <span>{pct}% full</span>
-                    </div>
-                    <div className="h-1.5 bg-[#f3f4f6] rounded-full">
-                      <div
-                        className="h-full rounded-full bg-[#6366f1]"
-                        style={{ width: `${Math.min(pct, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 text-xs text-[#9ca3af]">
-                    {batch.timings && (
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[13px]">schedule</span>
-                        {batch.timings}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px]">calendar_month</span>
-                      {fmtDate(batch.startDate)}
-                    </span>
-                  </div>
+                  {t.label}
+                  {count > 0 && (
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      tab === t.key ? 'bg-white/20 text-white' : 'bg-white text-[#64748b]'
+                    }`}>{count}</span>
+                  )}
                 </button>
               );
             })}
           </div>
-        )}
+        </div>
+
+        {/* Content */}
+        <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+              <span className="material-symbols-outlined text-[24px] animate-spin mb-2">sync</span>
+              <p className="text-[13px]">Loading batches…</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+              <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
+              <p className="text-[13px]">No {tab !== 'ALL' ? tab.toLowerCase() + ' ' : ''}batches assigned</p>
+            </div>
+          ) : (
+            <>
+              {/* Mobile list */}
+              <div className="sm:hidden divide-y divide-[#f1f5f9]">
+                {filtered.map((batch, idx) => {
+                  const meta = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
+                  const pct  = batch.maxStudents > 0 ? Math.round((batch.studentCount / batch.maxStudents) * 100) : 0;
+                  const grad = BATCH_GRADIENTS[idx % BATCH_GRADIENTS.length];
+                  const initials = batch.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                  return (
+                    <div key={batch.id} className="flex items-center gap-3 px-4 py-3.5 active:bg-[#f8fafc]"
+                      onClick={() => navigate(`/teacher/batches/${batch.id}`)}>
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
+                        <span className="text-white text-[11px] font-bold">{initials}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[13px] font-semibold text-[#0f172a] truncate">{batch.name}</p>
+                          <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                            style={{ backgroundColor: meta.bg, color: meta.text }}>
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.dot }} />
+                            {batch.status.charAt(0) + batch.status.slice(1).toLowerCase()}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#64748b] mt-0.5 truncate">{batch.courseName}</p>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="text-[10px] text-[#94a3b8]">{batch.studentCount}/{batch.maxStudents} students</span>
+                              <span className="text-[10px] text-[#94a3b8]">{pct}%</span>
+                            </div>
+                            <div className="h-1 bg-[#f1f5f9] rounded-full">
+                              <div className="h-full rounded-full bg-[#6366f1]" style={{ width: `${Math.min(pct, 100)}%` }} />
+                            </div>
+                          </div>
+                          {batch.timings && (
+                            <span className="flex items-center gap-1 text-[10px] text-[#94a3b8] shrink-0">
+                              <span className="material-symbols-outlined text-[11px]">schedule</span>
+                              {batch.timings}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="material-symbols-outlined text-[16px] text-[#cbd5e1] shrink-0">chevron_right</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop table */}
+              <table className="hidden sm:table w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#e2e8f0] bg-[#f8f9fa]">
+                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Batch</th>
+                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Timings</th>
+                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider hidden md:table-cell">Start Date</th>
+                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Students</th>
+                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Status</th>
+                    <th className="px-5 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f1f5f9]">
+                  {filtered.map((batch, idx) => {
+                    const meta = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
+                    const pct  = batch.maxStudents > 0 ? Math.round((batch.studentCount / batch.maxStudents) * 100) : 0;
+                    const grad = BATCH_GRADIENTS[idx % BATCH_GRADIENTS.length];
+                    const initials = batch.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    return (
+                      <tr key={batch.id} className="hover:bg-[#fafbff] transition-colors cursor-pointer"
+                        onClick={() => navigate(`/teacher/batches/${batch.id}`)}>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
+                              <span className="text-white text-[10px] font-bold">{initials}</span>
+                            </div>
+                            <div>
+                              <p className="text-[13px] font-semibold text-[#0f172a]">{batch.name}</p>
+                              <p className="text-[11px] text-[#94a3b8]">{batch.courseName}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="text-[12px] text-[#374151]">{batch.timings ?? '—'}</span>
+                        </td>
+                        <td className="px-5 py-3.5 hidden md:table-cell">
+                          <span className="text-[12px] text-[#374151]">{fmtDate(batch.startDate)}</span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="min-w-[80px]">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11px] text-[#374151] font-medium">{batch.studentCount}/{batch.maxStudents}</span>
+                              <span className="text-[10px] text-[#94a3b8]">{pct}%</span>
+                            </div>
+                            <div className="h-1 bg-[#f1f5f9] rounded-full">
+                              <div className="h-full rounded-full bg-[#6366f1]" style={{ width: `${Math.min(pct, 100)}%` }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                            style={{ backgroundColor: meta.bg, color: meta.text }}>
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.dot }} />
+                            {batch.status.charAt(0) + batch.status.slice(1).toLowerCase()}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <span className="material-symbols-outlined text-[16px] text-[#94a3b8]">chevron_right</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
+          )}
+        </div>
+
       </div>
     </DashboardShell>
   );

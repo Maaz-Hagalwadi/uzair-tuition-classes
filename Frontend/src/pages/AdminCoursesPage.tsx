@@ -207,16 +207,16 @@ export default function AdminCoursesPage() {
   return (
     <DashboardShell navItems={ADMIN_NAV}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-3">
           <div>
-            <h1 className="font-serif text-[28px] leading-[36px] font-semibold text-[#070235]">Courses</h1>
-            <p className="text-sm text-[#505f76] mt-1">Create and manage courses on the platform.</p>
+            <h1 className="font-serif text-[20px] sm:text-[28px] leading-tight sm:leading-[36px] font-semibold text-[#070235]">Courses</h1>
+            <p className="text-[11px] sm:text-sm text-[#505f76] mt-0.5 sm:mt-1">Create and manage courses on the platform.</p>
           </div>
           <button
             onClick={() => setModal(EMPTY_FORM)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors"
+            className="w-fit self-end sm:self-auto flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 bg-[#070235] text-white rounded-lg text-[12px] sm:text-sm font-semibold hover:bg-[#1e1b4b] transition-colors"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
+            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">add</span>
             New Course
           </button>
         </div>
@@ -249,28 +249,33 @@ export default function AdminCoursesPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
             {courses.map((course) => (
               <div key={course.id} className="bg-white border border-[#c8c5d0] rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                {/* Thumbnail */}
+                {/* Thumbnail with status badge overlay */}
                 <div
-                  className="h-36 bg-[#eaedff] flex items-center justify-center overflow-hidden cursor-pointer"
+                  className="relative h-24 sm:h-36 bg-[#eaedff] flex items-center justify-center overflow-hidden cursor-pointer"
                   onClick={() => navigate(`/admin/courses/${course.id}`)}
                 >
                   {course.thumbnailUrl ? (
                     <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
                   ) : (
                     <span
-                      className="material-symbols-outlined text-[48px] text-[#c8c5d0]"
+                      className="material-symbols-outlined text-[36px] sm:text-[48px] text-[#c8c5d0]"
                       style={{ fontVariationSettings: "'FILL' 1" }}
                     >
                       menu_book
                     </span>
                   )}
+                  {/* Status badge — overlaid on image on mobile, hidden (shown below) on desktop */}
+                  <div className="absolute top-1.5 right-1.5 sm:hidden">
+                    <StatusBadge status={course.status} />
+                  </div>
                 </div>
 
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="p-2.5 sm:p-4">
+                  {/* Desktop: title + badge side by side */}
+                  <div className="hidden sm:flex items-start justify-between gap-2 mb-2">
                     <h3
                       className="font-semibold text-[#131b2e] text-sm leading-snug cursor-pointer hover:text-[#070235] line-clamp-2"
                       onClick={() => navigate(`/admin/courses/${course.id}`)}
@@ -280,11 +285,19 @@ export default function AdminCoursesPage() {
                     <StatusBadge status={course.status} />
                   </div>
 
+                  {/* Mobile: title only (badge is on thumbnail) */}
+                  <h3
+                    className="sm:hidden font-semibold text-[#131b2e] text-[12px] leading-snug cursor-pointer hover:text-[#070235] line-clamp-2 mb-2"
+                    onClick={() => navigate(`/admin/courses/${course.id}`)}
+                  >
+                    {course.title}
+                  </h3>
+
                   {course.description && (
-                    <p className="text-xs text-[#787680] line-clamp-2 mb-3">{course.description}</p>
+                    <p className="hidden sm:block text-xs text-[#787680] line-clamp-2 mb-3">{course.description}</p>
                   )}
 
-                  <div className="flex items-center gap-3 text-xs text-[#505f76] mb-4">
+                  <div className="hidden sm:flex items-center gap-3 text-xs text-[#505f76] mb-4">
                     {course.duration && (
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-[14px]">schedule</span>
@@ -297,7 +310,40 @@ export default function AdminCoursesPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* Mobile: icon-only actions */}
+                  <div className="sm:hidden flex items-center justify-between border-t border-[#f1f0f4] pt-2 mt-1">
+                    <button
+                      onClick={() => navigate(`/admin/courses/${course.id}`)}
+                      className="flex items-center gap-1 text-[10px] text-[#505f76] font-medium"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">folder_open</span>
+                      View
+                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setModal({ id: course.id, title: course.title, description: course.description ?? '', duration: course.duration ?? '', thumbnailUrl: course.thumbnailUrl ?? '', status: course.status })}
+                        className="p-1 text-[#787680] hover:text-[#070235] rounded-lg transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">edit</span>
+                      </button>
+                      {deleteConfirm === course.id ? (
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => deleteMutation.mutate(course.id)} disabled={deleteMutation.isPending}
+                            className="px-1.5 py-0.5 text-[10px] bg-[#ba1a1a] text-white rounded font-semibold">OK</button>
+                          <button onClick={() => setDeleteConfirm(null)}
+                            className="px-1.5 py-0.5 text-[10px] border border-[#c8c5d0] text-[#505f76] rounded">✕</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setDeleteConfirm(course.id)}
+                          className="p-1 text-[#787680] hover:text-[#ba1a1a] rounded-lg transition-colors">
+                          <span className="material-symbols-outlined text-[15px]">delete</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Desktop: full action row */}
+                  <div className="hidden sm:flex items-center gap-2">
                     <button
                       onClick={() => navigate(`/admin/courses/${course.id}`)}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-[#c8c5d0] text-[#505f76] rounded-lg text-xs font-medium hover:bg-[#f2f3ff] hover:text-[#070235] transition-colors"
@@ -306,14 +352,7 @@ export default function AdminCoursesPage() {
                       Materials
                     </button>
                     <button
-                      onClick={() => setModal({
-                        id: course.id,
-                        title: course.title,
-                        description: course.description ?? '',
-                        duration: course.duration ?? '',
-                        thumbnailUrl: course.thumbnailUrl ?? '',
-                        status: course.status,
-                      })}
+                      onClick={() => setModal({ id: course.id, title: course.title, description: course.description ?? '', duration: course.duration ?? '', thumbnailUrl: course.thumbnailUrl ?? '', status: course.status })}
                       className="p-2 text-[#787680] hover:text-[#070235] hover:bg-[#f2f3ff] rounded-lg transition-colors"
                       title="Edit"
                     >

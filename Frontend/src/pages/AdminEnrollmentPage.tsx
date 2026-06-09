@@ -34,7 +34,7 @@ function timeAgo(iso: string) {
 }
 
 export default function AdminEnrollmentPage() {
-  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
+  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
   const [rejectModal, setRejectModal] = useState<{ id: number; studentName: string } | null>(null);
   const [rejectNote, setRejectNote] = useState('');
   const queryClient = useQueryClient();
@@ -81,50 +81,133 @@ export default function AdminEnrollmentPage() {
 
   return (
     <DashboardShell navItems={ADMIN_NAV}>
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-['Source_Serif_4'] text-[28px] font-semibold text-[#070235]">
+          <h1 className="font-['Source_Serif_4'] text-[20px] sm:text-[28px] font-semibold text-[#070235]">
             Enrollment Requests
           </h1>
-          <p className="text-sm text-[#64748b] mt-0.5">
+          <p className="text-[11px] sm:text-sm text-[#64748b] mt-0.5">
             Review student requests and approve after confirming payment offline
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-5 bg-[#f1f5f9] p-1 rounded-lg w-fit">
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setFilter(t.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
-                filter === t.key ? 'bg-white text-[#070235] shadow-sm' : 'text-[#64748b] hover:text-[#374151]'
-              }`}
-            >
-              {t.label}
-              {t.count != null && t.count > 0 && (
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  filter === t.key ? 'bg-[#fef3c7] text-[#92400e]' : 'bg-[#e2e8f0] text-[#64748b]'
-                }`}>
-                  {t.count}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="overflow-x-auto mb-5">
+          <div className="flex border-b border-[#e2e8f0] min-w-full sm:min-w-0">
+            {tabs.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setFilter(t.key)}
+                className={`whitespace-nowrap px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5 ${
+                  filter === t.key
+                    ? 'border-[#0f172a] text-[#0f172a]'
+                    : 'border-transparent text-[#6b7280] hover:text-[#374151]'
+                }`}
+              >
+                {t.label}
+                {t.count != null && t.count > 0 && (
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    filter === t.key ? 'bg-[#0f172a] text-white' : 'bg-[#e2e8f0] text-[#64748b]'
+                  }`}>
+                    {t.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
+        {/* Mobile cards (sm:hidden) */}
+        <div className="sm:hidden space-y-3">
+          {isLoading ? (
+            <div className="text-center py-12 text-[#94a3b8]">
+              <span className="material-symbols-outlined text-[24px] animate-spin block mx-auto mb-2">sync</span>
+              Loading…
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="text-center py-12 text-[#94a3b8]">
+              <span className="material-symbols-outlined text-[36px] block mx-auto mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>inbox</span>
+              No {filter !== 'ALL' ? filter.toLowerCase() : ''} requests
+            </div>
+          ) : (
+            requests.map(req => {
+              const cfg = STATUS_CFG[req.status];
+              const isApproving = approve.isPending && approve.variables === req.id;
+              return (
+                <div key={req.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-4 space-y-3">
+                  {/* Top row: avatar + name/email + time */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-[#eef2ff] flex items-center justify-center shrink-0">
+                        <span className="text-[11px] font-bold text-[#6366f1]">
+                          {req.studentName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-[12px] font-semibold text-[#0f172a]">{req.studentName}</p>
+                        <p className="text-[10px] text-[#94a3b8] truncate max-w-[180px]">{req.studentEmail}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-[#94a3b8] shrink-0">{timeAgo(req.createdAt)}</span>
+                  </div>
+                  {/* Course / batch */}
+                  <div>
+                    <p className="text-[12px] font-semibold text-[#0f172a]">{req.courseName}</p>
+                    <p className="text-[10px] text-[#94a3b8]">{req.batchName}</p>
+                  </div>
+                  {/* Status */}
+                  <div>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                      style={{ backgroundColor: cfg.bg, color: cfg.text }}>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
+                      {cfg.label}
+                    </span>
+                    {req.note && (
+                      <p className="text-[10px] text-[#94a3b8] mt-1 truncate" title={req.note}>Note: {req.note}</p>
+                    )}
+                  </div>
+                  {/* Actions */}
+                  {req.status === 'PENDING' ? (
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => approve.mutate(req.id)}
+                        disabled={isApproving}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-[#f0fdf4] text-[#16a34a] hover:bg-[#dcfce7] transition-colors disabled:opacity-50"
+                      >
+                        {isApproving
+                          ? <span className="material-symbols-outlined text-[12px] animate-spin">sync</span>
+                          : <span className="material-symbols-outlined text-[12px]">check_circle</span>}
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => { setRejectModal({ id: req.id, studentName: req.studentName }); setRejectNote(''); }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-[#fef2f2] text-[#dc2626] hover:bg-[#fee2e2] transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">cancel</span>
+                        Reject
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-[#cbd5e1]">—</span>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop table (hidden on mobile) */}
+        <div className="hidden sm:block bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#070235] text-white text-[11px] uppercase tracking-wider">
-                <th className="text-left px-5 py-3.5 font-semibold">Student</th>
-                <th className="text-left px-5 py-3.5 font-semibold">Course / Batch</th>
-                <th className="text-left px-5 py-3.5 font-semibold hidden md:table-cell">Requested</th>
-                <th className="text-left px-5 py-3.5 font-semibold">Status</th>
-                <th className="text-left px-5 py-3.5 font-semibold">Actions</th>
+              <tr className="border-b border-[#e2e8f0] bg-[#f8f9fa]">
+                <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Student</th>
+                <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Course / Batch</th>
+                <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider hidden md:table-cell">Requested</th>
+                <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Status</th>
+                <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">

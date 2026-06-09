@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
-import { LOGO_B64 } from '../lib/logo';
 import AuthLeftPanel from '../components/AuthLeftPanel';
+import Logo from '../components/Logo';
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
@@ -41,11 +41,19 @@ export default function ResetPasswordPage() {
     <main className="flex w-full h-screen overflow-hidden">
       <AuthLeftPanel />
 
+      {/* Mobile navbar — fixed, hidden on desktop */}
+      <nav className="fixed top-0 left-0 right-0 lg:hidden flex items-center justify-between px-5 h-14 bg-white border-b border-[#e4e2e6] z-50">
+        <Logo size={28} textColor="#1e1b4b" />
+        <Link
+          to="/login"
+          className="flex items-center justify-center w-8 h-8 text-[#505f76] hover:text-[#070235] transition-colors"
+        >
+          <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+        </Link>
+      </nav>
+
       <section className="w-full lg:w-1/2 flex items-center justify-center bg-[#faf8ff] px-6 md:px-12 lg:px-24 overflow-y-auto">
-        <div className="w-full max-w-md py-12">
-          <div className="lg:hidden mb-8 flex justify-center">
-            <img src={LOGO_B64} alt="Uzair Tuition" className="h-12 w-auto" />
-          </div>
+        <div className="w-full max-w-md pt-20 lg:pt-12 pb-12">
 
           {success ? (
             <div className="text-center">
@@ -57,7 +65,8 @@ export default function ResetPasswordPage() {
                   lock_reset
                 </span>
               </div>
-              <h2 className="font-serif text-[32px] leading-[40px] font-semibold text-[#070235] mb-3">
+              <h2 className="text-[32px] leading-[40px] font-bold text-[#070235] mb-3"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                 Password updated
               </h2>
               <p className="text-sm text-[#505f76] leading-relaxed">
@@ -74,7 +83,8 @@ export default function ResetPasswordPage() {
           ) : (
             <>
               <div className="mb-10">
-                <h2 className="font-serif text-[32px] leading-[40px] font-semibold text-[#070235] mb-2">
+                <h2 className="text-[32px] leading-[40px] font-bold text-[#070235] mb-2"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   Set new password
                 </h2>
                 <p className="text-sm text-[#505f76]">

@@ -7,8 +7,19 @@ import api from '../lib/api';
 
 type ActiveTab = 'students' | 'sessions';
 
+interface BatchEditForm {
+  name: string;
+  teacherId: string;
+  startDate: string;
+  endDate: string;
+  timings: string;
+  maxStudents: string;
+  status: string;
+}
+
 interface Batch {
-  id: number; name: string; courseName: string; teacherName: string | null;
+  id: number; name: string; courseId: number; courseName: string;
+  teacherId: number | null; teacherName: string | null;
   startDate: string; endDate: string | null; timings: string | null;
   maxStudents: number; status: string; studentCount: number;
 }
@@ -46,6 +57,38 @@ const PLATFORMS: { value: string; label: string; icon: string }[] = [
 
 function platformLabel(p: string | null) {
   return PLATFORMS.find(x => x.value === p)?.label ?? p ?? 'Link';
+}
+
+function ConfirmModal({ message, onConfirm, onCancel, loading }: {
+  message: string; onConfirm: () => void; onCancel: () => void; loading?: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-[#ffdad6] flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[20px] text-[#ba1a1a]">delete</span>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-[#131b2e]">Confirm Delete</p>
+            <p className="text-[12px] text-[#505f76] mt-0.5">{message}</p>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button onClick={onCancel}
+            className="px-4 py-2 text-[13px] border border-[#c8c5d0] text-[#505f76] rounded-lg font-semibold hover:bg-[#f2f3ff] transition-colors">
+            Cancel
+          </button>
+          <button onClick={onConfirm} disabled={loading}
+            className="flex items-center gap-1.5 px-4 py-2 text-[13px] bg-[#ba1a1a] text-white rounded-lg font-semibold hover:bg-[#93000a] transition-colors disabled:opacity-60">
+            {loading && <span className="material-symbols-outlined text-[14px] animate-spin">sync</span>}
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function SessionModal({
@@ -168,10 +211,12 @@ export default function AdminBatchDetailPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('students');
   const [search, setSearch] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState('');
-  const [removeConfirm, setRemoveConfirm] = useState<number | null>(null);
   const [enrollError, setEnrollError] = useState('');
   const [sessionModal, setSessionModal] = useState<null | (SessionForm & { id?: number })>(null);
-  const [sessionDeleteConfirm, setSessionDeleteConfirm] = useState<number | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [editModal, setEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<BatchEditForm>({ name: '', teacherId: '', startDate: '', endDate: '', timings: '', maxStudents: '30', status: 'UPCOMING' });
+  const [editError, setEditError] = useState('');
 
   const { data: batch, isLoading: batchLoading } = useQuery<Batch>({
     queryKey: ['admin-batch', batchId],
@@ -188,6 +233,11 @@ export default function AdminBatchDetailPage() {
   const { data: allStudents = [] } = useQuery<AllStudent[]>({
     queryKey: ['students-list'],
     queryFn: async () => { const { data } = await api.get('/admin/users?role=STUDENT'); return data; },
+  });
+
+  const { data: teachers = [] } = useQuery<AllStudent[]>({
+    queryKey: ['teachers-list'],
+    queryFn: async () => { const { data } = await api.get('/admin/users?role=TEACHER'); return data; },
   });
 
   const { data: sessions = [], isLoading: sessionsLoading } = useQuery<Session[]>({
@@ -213,7 +263,7 @@ export default function AdminBatchDetailPage() {
 
   const removeMutation = useMutation({
     mutationFn: (studentId: number) => api.delete(`/admin/batches/${batchId}/students/${studentId}`),
-    onSuccess: () => { invalidate(); setRemoveConfirm(null); },
+    onSuccess: () => { invalidate(); setConfirmModal(null); },
   });
 
   const createSessionMutation = useMutation({
@@ -242,7 +292,36 @@ export default function AdminBatchDetailPage() {
 
   const deleteSessionMutation = useMutation({
     mutationFn: (sessionId: number) => api.delete(`/admin/sessions/${sessionId}`),
-    onSuccess: () => { invalidateSessions(); setSessionDeleteConfirm(null); },
+    onSuccess: () => { invalidateSessions(); setConfirmModal(null); },
+  });
+
+  const updateBatchMutation = useMutation({
+    mutationFn: (form: BatchEditForm) => api.put(`/admin/batches/${batchId}`, {
+      name: form.name.trim(),
+      courseId: batch!.courseId ?? batch!.id,
+      teacherId: form.teacherId ? Number(form.teacherId) : null,
+      startDate: form.startDate,
+      endDate: form.endDate || null,
+      timings: form.timings.trim() || null,
+      maxStudents: Number(form.maxStudents) || 30,
+      status: form.status,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-batch', batchId] });
+      qc.invalidateQueries({ queryKey: ['admin-batches'] });
+      setEditModal(false); setEditError('');
+    },
+    onError: (err: any) => setEditError(err.response?.data?.message ?? 'Failed to save changes.'),
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: (status: string) => api.put(`/admin/batches/${batchId}`, {
+      name: batch!.name, courseId: batch!.courseId ?? batch!.id,
+      teacherId: batch!.teacherId ?? null,
+      startDate: batch!.startDate, endDate: batch!.endDate ?? null,
+      timings: batch!.timings ?? null, maxStudents: batch!.maxStudents, status,
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-batch', batchId] }); qc.invalidateQueries({ queryKey: ['admin-batches'] }); },
   });
 
   const handleSessionSave = (f: SessionForm) => {
@@ -283,7 +362,7 @@ export default function AdminBatchDetailPage() {
 
   return (
     <DashboardShell navItems={ADMIN_NAV}>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Breadcrumb */}
         <button onClick={() => navigate('/admin/batches')}
           className="flex items-center gap-1 text-sm text-[#505f76] hover:text-[#070235] mb-6 transition-colors">
@@ -292,30 +371,60 @@ export default function AdminBatchDetailPage() {
         </button>
 
         {/* Batch header */}
-        <div className="bg-white border border-[#c8c5d0] rounded-xl p-6 mb-6">
-          <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="bg-white border border-[#c8c5d0] rounded-xl p-4 sm:p-6 mb-6">
+          <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
             <div>
-              <h1 className="font-serif text-[24px] font-semibold text-[#070235]">{batch.name}</h1>
-              <p className="text-sm text-[#505f76] mt-0.5">{batch.courseName}</p>
+              <h1 className="font-serif text-[18px] sm:text-[24px] font-semibold text-[#070235]">{batch.name}</h1>
+              <p className="text-[12px] sm:text-sm text-[#505f76] mt-0.5">{batch.courseName}</p>
             </div>
-            <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusMeta.bg} ${statusMeta.text}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
-              {batch.status.charAt(0) + batch.status.slice(1).toLowerCase()}
-            </span>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              {/* Quick status pills */}
+              <div className="flex gap-1">
+                {(['UPCOMING', 'ACTIVE', 'COMPLETED'] as const).map(s => (
+                  <button key={s} onClick={() => { if (batch.status !== s) statusMutation.mutate(s); }}
+                    disabled={statusMutation.isPending}
+                    className={`px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold transition-all ${
+                      batch.status === s
+                        ? `${statusMeta.bg} ${statusMeta.text} ring-1 ring-current/30`
+                        : 'bg-[#f2f3ff] text-[#505f76] hover:bg-[#eaedff]'
+                    }`}>
+                    {s.charAt(0) + s.slice(1).toLowerCase()}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  setEditForm({
+                    name: batch.name,
+                    teacherId: batch.teacherId ? String(batch.teacherId) : '',
+                    startDate: batch.startDate,
+                    endDate: batch.endDate ?? '',
+                    timings: batch.timings ?? '',
+                    maxStudents: String(batch.maxStudents),
+                    status: batch.status,
+                  });
+                  setEditModal(true); setEditError('');
+                }}
+                className="flex items-center gap-1 px-2.5 py-1.5 border border-[#c8c5d0] text-[#505f76] rounded-lg text-xs font-semibold hover:bg-[#f2f3ff] transition-colors"
+              >
+                <span className="material-symbols-outlined text-[14px]">edit</span>
+                Edit
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {[
               { icon: 'person', label: 'Teacher', value: batch.teacherName ?? 'Unassigned' },
               { icon: 'calendar_today', label: 'Start Date', value: formatDate(batch.startDate) },
               { icon: 'schedule', label: 'Timings', value: batch.timings ?? '—' },
               { icon: 'group', label: 'Students', value: `${batch.studentCount} / ${batch.maxStudents}` },
             ].map(item => (
-              <div key={item.label} className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-[16px] text-[#505f76] mt-0.5">{item.icon}</span>
+              <div key={item.label} className="flex items-start gap-1.5 sm:gap-2">
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px] text-[#505f76] mt-0.5">{item.icon}</span>
                 <div>
-                  <p className="text-xs text-[#787680]">{item.label}</p>
-                  <p className="text-sm font-medium text-[#131b2e]">{item.value}</p>
+                  <p className="text-[10px] sm:text-xs text-[#787680]">{item.label}</p>
+                  <p className="text-[12px] sm:text-sm font-medium text-[#131b2e]">{item.value}</p>
                 </div>
               </div>
             ))}
@@ -346,22 +455,22 @@ export default function AdminBatchDetailPage() {
         {/* Students tab */}
         {activeTab === 'students' && (
           <div className="bg-white border border-[#c8c5d0] rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#e4e2e6]">
-              <h2 className="font-semibold text-[#131b2e] flex items-center gap-2 mb-4">
-                <span className="material-symbols-outlined text-[18px] text-[#505f76]">group</span>
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e4e2e6]">
+              <h2 className="text-[13px] sm:text-sm font-semibold text-[#131b2e] flex items-center gap-1.5 sm:gap-2 mb-3">
+                <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-[#505f76]">group</span>
                 Enrolled Students
-                <span className="ml-1 px-2 py-0.5 bg-[#eaedff] text-[#070235] rounded-full text-xs font-medium">
+                <span className="ml-1 px-2 py-0.5 bg-[#eaedff] text-[#070235] rounded-full text-[11px] sm:text-xs font-medium">
                   {batch.studentCount}
                 </span>
               </h2>
 
-              <div className="flex gap-2 items-end">
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
                 <div className="flex-1">
-                  <label className="block text-xs font-semibold text-[#070235] mb-1">Add Student</label>
+                  <label className="block text-[11px] sm:text-xs font-semibold text-[#070235] mb-1">Add Student</label>
                   <select
                     value={selectedStudentId}
                     onChange={e => { setSelectedStudentId(e.target.value); setEnrollError(''); }}
-                    className="block w-full px-3 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+                    className="block w-full px-3 py-2 sm:py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-[12px] sm:text-sm focus:outline-none focus:border-[#070235] transition-all"
                   >
                     <option value="">Select a student…</option>
                     {availableStudents.map(s => (
@@ -372,30 +481,30 @@ export default function AdminBatchDetailPage() {
                 <button
                   onClick={() => { if (selectedStudentId) enrollMutation.mutate(Number(selectedStudentId)); }}
                   disabled={!selectedStudentId || enrollMutation.isPending}
-                  className="flex items-center gap-1.5 px-4 py-2.5 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors disabled:opacity-50"
+                  className="w-fit self-end sm:self-auto flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-[#070235] text-white rounded-lg text-[12px] sm:text-sm font-semibold hover:bg-[#1e1b4b] transition-colors disabled:opacity-50"
                 >
                   {enrollMutation.isPending
-                    ? <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
-                    : <span className="material-symbols-outlined text-[16px]">person_add</span>}
+                    ? <span className="material-symbols-outlined text-[14px] sm:text-[16px] animate-spin">sync</span>
+                    : <span className="material-symbols-outlined text-[14px] sm:text-[16px]">person_add</span>}
                   Enrol
                 </button>
               </div>
               {enrollError && (
-                <p className="mt-2 flex items-center gap-1 text-xs text-[#ba1a1a]">
-                  <span className="material-symbols-outlined text-[14px]">error</span>{enrollError}
+                <p className="mt-2 flex items-center gap-1 text-[11px] sm:text-xs text-[#ba1a1a]">
+                  <span className="material-symbols-outlined text-[13px] sm:text-[14px]">error</span>{enrollError}
                 </p>
               )}
             </div>
 
             {students.length > 0 && (
-              <div className="px-6 py-3 border-b border-[#e4e2e6]">
-                <div className="relative max-w-xs">
+              <div className="px-4 sm:px-6 py-3 border-b border-[#e4e2e6]">
+                <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#787680]">
-                    <span className="material-symbols-outlined text-[18px]">search</span>
+                    <span className="material-symbols-outlined text-[16px] sm:text-[18px]">search</span>
                   </span>
                   <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                     placeholder="Search students…"
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all" />
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#c8c5d0] rounded-lg text-[12px] sm:text-sm focus:outline-none focus:border-[#070235] transition-all" />
                 </div>
               </div>
             )}
@@ -408,61 +517,72 @@ export default function AdminBatchDetailPage() {
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <span className="material-symbols-outlined text-[40px] text-[#c8c5d0] mb-2"
                   style={{ fontVariationSettings: "'FILL' 1" }}>person_off</span>
-                <p className="text-sm text-[#787680]">
+                <p className="text-[12px] sm:text-sm text-[#787680]">
                   {search ? 'No students match your search.' : 'No students enrolled yet.'}
                 </p>
               </div>
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#e4e2e6] bg-[#faf8ff]">
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Student</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Phone</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Enrolled</th>
-                    <th className="text-right px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e4e2e6]">
+              <>
+                {/* Mobile cards */}
+                <div className="sm:hidden divide-y divide-[#e4e2e6]">
                   {filteredStudents.map(s => (
-                    <tr key={s.studentId} className="hover:bg-[#faf8ff] transition-colors">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#eaedff] flex items-center justify-center shrink-0">
-                            <span className="text-xs font-semibold text-[#070235]">
-                              {s.firstName[0]}{s.lastName[0]}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium text-[#131b2e]">{s.firstName} {s.lastName}</p>
-                            <p className="text-xs text-[#787680]">{s.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-[#505f76] text-xs">{s.phone ?? '—'}</td>
-                      <td className="px-5 py-3.5 text-[#505f76] text-xs">{formatDate(s.enrolledAt)}</td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex justify-end">
-                          {removeConfirm === s.studentId ? (
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => removeMutation.mutate(s.studentId)}
-                                disabled={removeMutation.isPending}
-                                className="px-2 py-1 text-xs bg-[#ba1a1a] text-white rounded-lg font-semibold">Confirm</button>
-                              <button onClick={() => setRemoveConfirm(null)}
-                                className="px-2 py-1 text-xs border border-[#c8c5d0] text-[#505f76] rounded-lg">✕</button>
+                    <div key={s.studentId} className="flex items-center gap-3 px-4 py-3">
+                      <div className="w-8 h-8 rounded-full bg-[#eaedff] flex items-center justify-center shrink-0">
+                        <span className="text-[11px] font-semibold text-[#070235]">{s.firstName[0]}{s.lastName[0]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-medium text-[#131b2e] truncate">{s.firstName} {s.lastName}</p>
+                        <p className="text-[10px] text-[#787680] truncate">{s.email}</p>
+                        {s.phone && <p className="text-[10px] text-[#787680]">{s.phone}</p>}
+                      </div>
+                      <button onClick={() => setConfirmModal({ message: `Remove ${s.firstName} ${s.lastName} from this batch?`, onConfirm: () => removeMutation.mutate(s.studentId) })}
+                        className="p-1.5 text-[#787680] hover:text-[#ba1a1a] hover:bg-[#ffdad6] rounded-lg transition-colors shrink-0">
+                        <span className="material-symbols-outlined text-[15px]">person_remove</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table */}
+                <table className="hidden sm:table w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#e4e2e6] bg-[#faf8ff]">
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Student</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Phone</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Enrolled</th>
+                      <th className="text-right px-5 py-3 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e4e2e6]">
+                    {filteredStudents.map(s => (
+                      <tr key={s.studentId} className="hover:bg-[#faf8ff] transition-colors">
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[#eaedff] flex items-center justify-center shrink-0">
+                              <span className="text-xs font-semibold text-[#070235]">{s.firstName[0]}{s.lastName[0]}</span>
                             </div>
-                          ) : (
-                            <button onClick={() => setRemoveConfirm(s.studentId)}
+                            <div>
+                              <p className="font-medium text-[#131b2e]">{s.firstName} {s.lastName}</p>
+                              <p className="text-xs text-[#787680]">{s.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-[#505f76] text-xs">{s.phone ?? '—'}</td>
+                        <td className="px-5 py-3.5 text-[#505f76] text-xs">{formatDate(s.enrolledAt)}</td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex justify-end">
+                            <button onClick={() => setConfirmModal({ message: `Remove ${s.firstName} ${s.lastName} from this batch?`, onConfirm: () => removeMutation.mutate(s.studentId) })}
                               className="p-1.5 text-[#787680] hover:text-[#ba1a1a] hover:bg-[#ffdad6] rounded-lg transition-colors"
                               title="Remove from batch">
                               <span className="material-symbols-outlined text-[16px]">person_remove</span>
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
             )}
           </div>
         )}
@@ -470,17 +590,17 @@ export default function AdminBatchDetailPage() {
         {/* Sessions tab */}
         {activeTab === 'sessions' && (
           <div className="bg-white border border-[#c8c5d0] rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e4e2e6]">
-              <h2 className="font-semibold text-[#131b2e] flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-[#505f76]">video_call</span>
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e4e2e6]">
+              <h2 className="text-[13px] sm:text-sm font-semibold text-[#131b2e] flex items-center gap-1.5 sm:gap-2">
+                <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-[#505f76]">video_call</span>
                 Class Sessions
-                <span className="ml-1 px-2 py-0.5 bg-[#eaedff] text-[#070235] rounded-full text-xs font-medium">
+                <span className="ml-1 px-2 py-0.5 bg-[#eaedff] text-[#070235] rounded-full text-[11px] sm:text-xs font-medium">
                   {sessions.length}
                 </span>
               </h2>
               <button onClick={() => setSessionModal({ ...EMPTY_SESSION })}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors">
-                <span className="material-symbols-outlined text-[16px]">add</span>
+                className="flex items-center gap-1 px-2 py-1 sm:px-4 sm:py-2 bg-[#070235] text-white rounded-lg text-[10px] sm:text-sm font-semibold hover:bg-[#1e1b4b] transition-colors">
+                <span className="material-symbols-outlined text-[12px] sm:text-[16px]">add</span>
                 Add Session
               </button>
             </div>
@@ -497,12 +617,84 @@ export default function AdminBatchDetailPage() {
                 <p className="text-xs text-[#787680]">Add a class session with a meeting link for students.</p>
               </div>
             ) : (
-              <div className="divide-y divide-[#e4e2e6]">
+              <>
+              {/* Mobile cards */}
+              <div className="sm:hidden p-3 space-y-3">
+                {sessions.map(s => {
+                  const plat = PLATFORMS.find(p => p.value === s.meetingPlatform);
+                  return (
+                    <div key={s.id} className="border border-[#e2e8f0] rounded-xl overflow-hidden">
+                      {/* Card body */}
+                      <div className="flex items-stretch">
+                        {/* Date column */}
+                        <div className="w-14 bg-[#070235] flex flex-col items-center justify-center py-3 shrink-0">
+                          <p className="text-[9px] font-semibold text-[#a5b4fc] uppercase tracking-wide">
+                            {new Date(s.sessionDate).toLocaleDateString('en-GB', { month: 'short' })}
+                          </p>
+                          <p className="text-[22px] font-bold text-white leading-none">
+                            {new Date(s.sessionDate).getDate()}
+                          </p>
+                          <p className="text-[9px] text-[#a5b4fc]">
+                            {new Date(s.sessionDate).toLocaleDateString('en-GB', { weekday: 'short' })}
+                          </p>
+                        </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 p-3">
+                          <p className="text-[13px] font-semibold text-[#131b2e] leading-snug">{s.title}</p>
+                          <p className="text-[11px] text-[#505f76] mt-0.5">
+                            {formatTime(s.startTime)}{s.endTime ? ` — ${formatTime(s.endTime)}` : ''}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            {plat && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#eaedff] text-[#070235] rounded-full text-[10px] font-medium">
+                                <span className="material-symbols-outlined text-[11px]">{plat.icon}</span>
+                                {plat.label}
+                              </span>
+                            )}
+                            {s.meetingUrl && (
+                              <a href={s.meetingUrl} target="_blank" rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-[#4f46e5] font-medium hover:underline">
+                                <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                                Join
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Action row */}
+                      <div className="flex items-center gap-1 px-3 py-2 bg-[#fafbff] border-t border-[#e2e8f0]">
+                        <button
+                          onClick={() => navigate(`/admin/batches/${batchId}/sessions/${s.id}/attendance`)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold text-[#4f46e5] bg-[#eef2ff] rounded-lg"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">fact_check</span>
+                          Attendance
+                        </button>
+                        <div className="ml-auto flex items-center gap-1">
+                          <button onClick={() => setSessionModal({
+                            id: s.id, title: s.title, sessionDate: s.sessionDate,
+                            startTime: s.startTime, endTime: s.endTime ?? '',
+                            meetingUrl: s.meetingUrl ?? '', meetingPlatform: s.meetingPlatform ?? 'GOOGLE_MEET',
+                          })} className="p-1.5 text-[#787680] hover:text-[#070235] hover:bg-[#eaedff] rounded-lg transition-colors">
+                            <span className="material-symbols-outlined text-[15px]">edit</span>
+                          </button>
+                          <button onClick={() => setConfirmModal({ message: `Delete session "${s.title}"?`, onConfirm: () => deleteSessionMutation.mutate(s.id) })}
+                            className="p-1.5 text-[#787680] hover:text-[#ba1a1a] hover:bg-[#ffdad6] rounded-lg transition-colors">
+                            <span className="material-symbols-outlined text-[15px]">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop rows */}
+              <div className="hidden sm:block divide-y divide-[#e4e2e6]">
                 {sessions.map(s => {
                   const plat = PLATFORMS.find(p => p.value === s.meetingPlatform);
                   return (
                     <div key={s.id} className="px-6 py-4 flex items-start gap-4 hover:bg-[#faf8ff] transition-colors">
-                      {/* Date block */}
                       <div className="shrink-0 w-12 text-center">
                         <p className="text-[10px] font-semibold text-[#787680] uppercase tracking-wide">
                           {new Date(s.sessionDate).toLocaleDateString('en-GB', { month: 'short' })}
@@ -514,8 +706,6 @@ export default function AdminBatchDetailPage() {
                           {new Date(s.sessionDate).toLocaleDateString('en-GB', { weekday: 'short' })}
                         </p>
                       </div>
-
-                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <p className="font-semibold text-[#131b2e] text-sm">{s.title}</p>
@@ -527,8 +717,7 @@ export default function AdminBatchDetailPage() {
                           )}
                         </div>
                         <p className="text-xs text-[#505f76]">
-                          {formatTime(s.startTime)}
-                          {s.endTime ? ` — ${formatTime(s.endTime)}` : ''}
+                          {formatTime(s.startTime)}{s.endTime ? ` — ${formatTime(s.endTime)}` : ''}
                           {s.createdByName ? ` · Added by ${s.createdByName}` : ''}
                         </p>
                         {s.meetingUrl && (
@@ -539,14 +728,9 @@ export default function AdminBatchDetailPage() {
                           </a>
                         )}
                       </div>
-
-                      {/* Actions */}
                       <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => navigate(`/admin/batches/${batchId}/sessions/${s.id}/attendance`)}
-                          className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-semibold text-[#4f46e5] hover:bg-[#eef2ff] rounded-lg transition-colors"
-                          title="Mark / view attendance"
-                        >
+                        <button onClick={() => navigate(`/admin/batches/${batchId}/sessions/${s.id}/attendance`)}
+                          className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-semibold text-[#4f46e5] hover:bg-[#eef2ff] rounded-lg transition-colors">
                           <span className="material-symbols-outlined text-[14px]">fact_check</span>
                           Attendance
                         </button>
@@ -554,31 +738,19 @@ export default function AdminBatchDetailPage() {
                           id: s.id, title: s.title, sessionDate: s.sessionDate,
                           startTime: s.startTime, endTime: s.endTime ?? '',
                           meetingUrl: s.meetingUrl ?? '', meetingPlatform: s.meetingPlatform ?? 'GOOGLE_MEET',
-                        })}
-                          className="p-1.5 text-[#787680] hover:text-[#070235] hover:bg-[#eaedff] rounded-lg transition-colors"
-                          title="Edit session">
+                        })} className="p-1.5 text-[#787680] hover:text-[#070235] hover:bg-[#eaedff] rounded-lg transition-colors">
                           <span className="material-symbols-outlined text-[16px]">edit</span>
                         </button>
-                        {sessionDeleteConfirm === s.id ? (
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => deleteSessionMutation.mutate(s.id)}
-                              disabled={deleteSessionMutation.isPending}
-                              className="px-2 py-1 text-xs bg-[#ba1a1a] text-white rounded-lg font-semibold">Confirm</button>
-                            <button onClick={() => setSessionDeleteConfirm(null)}
-                              className="px-2 py-1 text-xs border border-[#c8c5d0] text-[#505f76] rounded-lg">✕</button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setSessionDeleteConfirm(s.id)}
-                            className="p-1.5 text-[#787680] hover:text-[#ba1a1a] hover:bg-[#ffdad6] rounded-lg transition-colors"
-                            title="Delete session">
-                            <span className="material-symbols-outlined text-[16px]">delete</span>
-                          </button>
-                        )}
+                        <button onClick={() => setConfirmModal({ message: `Delete session "${s.title}"?`, onConfirm: () => deleteSessionMutation.mutate(s.id) })}
+                          className="p-1.5 text-[#787680] hover:text-[#ba1a1a] hover:bg-[#ffdad6] rounded-lg transition-colors">
+                          <span className="material-symbols-outlined text-[16px]">delete</span>
+                        </button>
                       </div>
                     </div>
                   );
                 })}
               </div>
+              </>
             )}
           </div>
         )}
@@ -591,6 +763,154 @@ export default function AdminBatchDetailPage() {
             onSave={handleSessionSave}
             saving={createSessionMutation.isPending || updateSessionMutation.isPending}
           />
+        )}
+
+        {/* Confirm delete modal */}
+        {confirmModal && (
+          <ConfirmModal
+            message={confirmModal.message}
+            onConfirm={confirmModal.onConfirm}
+            onCancel={() => setConfirmModal(null)}
+            loading={removeMutation.isPending || deleteSessionMutation.isPending}
+          />
+        )}
+
+        {/* Edit batch modal */}
+        {editModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setEditModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#e4e2e6]">
+                <h2 className="font-semibold text-[#131b2e]">Edit Batch</h2>
+                <button onClick={() => setEditModal(false)} className="text-[#787680] hover:text-[#131b2e]">
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+
+              <form
+                onSubmit={e => { e.preventDefault(); updateBatchMutation.mutate(editForm); }}
+                className="p-6 space-y-4"
+              >
+                {/* Batch name */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#070235] mb-1.5">Batch Name *</label>
+                  <input
+                    required type="text"
+                    value={editForm.name}
+                    onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="e.g. Morning Batch — Jan 2025"
+                    className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] focus:ring-2 focus:ring-[#070235]/10 transition-all"
+                  />
+                </div>
+
+                {/* Teacher */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#070235] mb-1.5">
+                    Teacher <span className="font-normal text-[#787680]">(optional)</span>
+                  </label>
+                  <select
+                    value={editForm.teacherId}
+                    onChange={e => setEditForm(f => ({ ...f, teacherId: e.target.value }))}
+                    className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+                  >
+                    <option value="">— Unassigned —</option>
+                    {teachers.map(t => (
+                      <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#070235] mb-1.5">Start Date *</label>
+                    <input
+                      required type="date"
+                      value={editForm.startDate}
+                      onChange={e => setEditForm(f => ({ ...f, startDate: e.target.value }))}
+                      className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#070235] mb-1.5">
+                      End Date <span className="font-normal text-[#787680]">(opt.)</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={editForm.endDate}
+                      onChange={e => setEditForm(f => ({ ...f, endDate: e.target.value }))}
+                      className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Timings + Max students */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#070235] mb-1.5">
+                      Timings <span className="font-normal text-[#787680]">(opt.)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.timings}
+                      onChange={e => setEditForm(f => ({ ...f, timings: e.target.value }))}
+                      placeholder="e.g. Mon/Wed 4–6 PM"
+                      className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#070235] mb-1.5">Max Students</label>
+                    <input
+                      required type="number" min={1}
+                      value={editForm.maxStudents}
+                      onChange={e => setEditForm(f => ({ ...f, maxStudents: e.target.value }))}
+                      className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#070235] mb-1.5">Status</label>
+                  <div className="flex gap-2">
+                    {(['UPCOMING', 'ACTIVE', 'COMPLETED'] as const).map(s => (
+                      <button
+                        key={s} type="button"
+                        onClick={() => setEditForm(f => ({ ...f, status: s }))}
+                        className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                          editForm.status === s
+                            ? 'bg-[#070235] text-white border-[#070235]'
+                            : 'bg-white text-[#505f76] border-[#c8c5d0] hover:bg-[#f2f3ff]'
+                        }`}
+                      >
+                        {s.charAt(0) + s.slice(1).toLowerCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {editError && (
+                  <p className="flex items-center gap-1 text-xs text-[#ba1a1a]">
+                    <span className="material-symbols-outlined text-[14px]">error</span>{editError}
+                  </p>
+                )}
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button type="button" onClick={() => setEditModal(false)}
+                    className="px-5 py-2.5 border border-[#c8c5d0] text-[#505f76] rounded-lg text-sm font-semibold hover:bg-[#f2f3ff] transition-colors">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={updateBatchMutation.isPending}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors disabled:opacity-60">
+                    {updateBatchMutation.isPending && (
+                      <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
+                    )}
+                    {updateBatchMutation.isPending ? 'Saving…' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
       </div>
     </DashboardShell>

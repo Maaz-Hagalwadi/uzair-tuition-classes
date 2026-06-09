@@ -2,6 +2,8 @@ package com.uzairtuition.announcement;
 
 import com.uzairtuition.batch.Batch;
 import com.uzairtuition.batch.BatchRepository;
+import com.uzairtuition.batch.BatchStudentRepository;
+import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,9 @@ public class AnnouncementService {
 
     private final AnnouncementRepository announcementRepository;
     private final BatchRepository batchRepository;
+    private final BatchStudentRepository batchStudentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public AnnouncementResponse create(AnnouncementRequest req, String authorEmail) {
@@ -39,7 +43,19 @@ public class AnnouncementService {
                 .batch(batch)
                 .build();
 
-        return AnnouncementResponse.from(announcementRepository.save(a));
+        AnnouncementResponse response = AnnouncementResponse.from(announcementRepository.save(a));
+
+        if (batch != null) {
+            batchStudentRepository.findByBatchIdOrderByEnrolledAtDesc(batch.getId())
+                    .forEach(bs -> notificationService.createForUser(
+                            bs.getStudent(), "NEW_ANNOUNCEMENT",
+                            "New Announcement: " + a.getTitle(),
+                            a.getContent().length() > 120 ? a.getContent().substring(0, 120) + "…" : a.getContent(),
+                            a.getId()
+                    ));
+        }
+
+        return response;
     }
 
     public List<AnnouncementResponse> getBatchAnnouncements(Long batchId) {

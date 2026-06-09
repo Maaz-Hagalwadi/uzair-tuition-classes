@@ -239,28 +239,30 @@ export default function AdminBatchesPage() {
   return (
     <DashboardShell navItems={ADMIN_NAV}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-3">
           <div>
-            <h1 className="font-serif text-[28px] leading-[36px] font-semibold text-[#070235]">Batches</h1>
-            <p className="text-sm text-[#505f76] mt-1">Manage class batches, assign teachers and enrol students.</p>
+            <h1 className="font-serif text-[20px] sm:text-[28px] leading-tight sm:leading-[36px] font-semibold text-[#070235]">Batches</h1>
+            <p className="text-[11px] sm:text-sm text-[#505f76] mt-0.5 sm:mt-1">Manage class batches, assign teachers and enrol students.</p>
           </div>
           <button onClick={() => setModal(EMPTY_FORM)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors">
-            <span className="material-symbols-outlined text-[18px]">add</span>
+            className="w-fit self-end sm:self-auto flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 bg-[#070235] text-white rounded-lg text-[12px] sm:text-sm font-semibold hover:bg-[#1e1b4b] transition-colors">
+            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">add</span>
             New Batch
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-white border border-[#c8c5d0] rounded-xl p-1 w-fit">
-          {TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                tab === t.key ? 'bg-[#070235] text-white shadow-sm' : 'text-[#505f76] hover:bg-[#f2f3ff] hover:text-[#070235]'
-              }`}>
-              {t.label}
-            </button>
-          ))}
+        <div className="overflow-x-auto mb-6 pb-1">
+          <div className="flex gap-1 min-w-full sm:min-w-0 bg-white border border-[#c8c5d0] rounded-xl p-1 w-fit">
+            {TABS.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  tab === t.key ? 'bg-[#070235] text-white shadow-sm' : 'text-[#505f76] hover:bg-[#f2f3ff] hover:text-[#070235]'
+                }`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {isLoading ? (
@@ -284,76 +286,152 @@ export default function AdminBatchesPage() {
             </button>
           </div>
         ) : (
-          <div className="bg-white border border-[#c8c5d0] rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#e4e2e6] bg-[#faf8ff]">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Batch</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Course</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Teacher</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Schedule</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Students</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Status</th>
-                  <th className="text-right px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e4e2e6]">
-                {batches.map(batch => (
-                  <tr key={batch.id} className="hover:bg-[#faf8ff] transition-colors">
-                    <td className="px-5 py-4">
-                      <p className="font-medium text-[#131b2e] cursor-pointer hover:text-[#070235]"
-                        onClick={() => navigate(`/admin/batches/${batch.id}`)}>
-                        {batch.name}
-                      </p>
-                    </td>
-                    <td className="px-5 py-4 text-[#505f76] text-xs">{batch.courseName}</td>
-                    <td className="px-5 py-4 text-[#505f76] text-xs">{batch.teacherName ?? <span className="text-[#c8c5d0]">Unassigned</span>}</td>
-                    <td className="px-5 py-4 text-xs text-[#505f76]">
-                      <p>{batch.startDate}{batch.endDate ? ` → ${batch.endDate}` : ''}</p>
-                      {batch.timings && <p className="text-[#787680]">{batch.timings}</p>}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="text-sm font-medium text-[#131b2e]">{batch.studentCount}</span>
-                      <span className="text-xs text-[#787680]">/{batch.maxStudents}</span>
-                    </td>
-                    <td className="px-5 py-4"><StatusBadge status={batch.status} /></td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => navigate(`/admin/batches/${batch.id}`)}
-                          className="p-1.5 text-[#787680] hover:text-[#070235] hover:bg-[#f2f3ff] rounded-lg transition-colors" title="Manage students">
-                          <span className="material-symbols-outlined text-[16px]">group</span>
-                        </button>
-                        <button onClick={() => setModal({
-                          id: batch.id, name: batch.name,
-                          courseId: String(batch.courseId),
-                          teacherId: batch.teacherId ? String(batch.teacherId) : '',
-                          startDate: batch.startDate, endDate: batch.endDate ?? '',
-                          timings: batch.timings ?? '', maxStudents: String(batch.maxStudents),
-                          status: batch.status,
-                        })}
-                          className="p-1.5 text-[#787680] hover:text-[#070235] hover:bg-[#f2f3ff] rounded-lg transition-colors" title="Edit">
-                          <span className="material-symbols-outlined text-[16px]">edit</span>
-                        </button>
-                        {deleteConfirm === batch.id ? (
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => deleteMutation.mutate(batch.id)} disabled={deleteMutation.isPending}
-                              className="px-2 py-1 text-xs bg-[#ba1a1a] text-white rounded-lg font-semibold">Confirm</button>
-                            <button onClick={() => setDeleteConfirm(null)}
-                              className="px-2 py-1 text-xs border border-[#c8c5d0] text-[#505f76] rounded-lg">✕</button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setDeleteConfirm(batch.id)}
-                            className="p-1.5 text-[#787680] hover:text-[#ba1a1a] hover:bg-[#ffdad6] rounded-lg transition-colors">
-                            <span className="material-symbols-outlined text-[16px]">delete</span>
-                          </button>
-                        )}
+          <>
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-3">
+              {batches.map(batch => (
+                <div key={batch.id} className="bg-white border border-[#c8c5d0] rounded-xl p-4 space-y-3">
+                  {/* Batch name + status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <p
+                      className="text-[13px] font-semibold text-[#131b2e] cursor-pointer hover:text-[#070235]"
+                      onClick={() => navigate(`/admin/batches/${batch.id}`)}
+                    >
+                      {batch.name}
+                    </p>
+                    <StatusBadge status={batch.status} />
+                  </div>
+                  {/* Course + teacher */}
+                  <div className="text-[11px] text-[#505f76] space-y-0.5">
+                    <p>{batch.courseName}</p>
+                    <p>{batch.teacherName ?? <span className="text-[#c8c5d0]">Unassigned</span>}</p>
+                  </div>
+                  {/* Schedule */}
+                  <div className="text-[11px] text-[#505f76]">
+                    <p>{batch.startDate}{batch.endDate ? ` → ${batch.endDate}` : ''}</p>
+                    {batch.timings && <p className="text-[#787680]">{batch.timings}</p>}
+                  </div>
+                  {/* Students */}
+                  <p className="text-[12px]">
+                    <span className="font-medium text-[#131b2e]">{batch.studentCount}</span>
+                    <span className="text-[#787680]">/{batch.maxStudents} students</span>
+                  </p>
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => navigate(`/admin/batches/${batch.id}`)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-[#505f76] border border-[#c8c5d0] hover:bg-[#f2f3ff] hover:text-[#070235] transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">group</span>
+                      Manage
+                    </button>
+                    <button
+                      onClick={() => setModal({
+                        id: batch.id, name: batch.name,
+                        courseId: String(batch.courseId),
+                        teacherId: batch.teacherId ? String(batch.teacherId) : '',
+                        startDate: batch.startDate, endDate: batch.endDate ?? '',
+                        timings: batch.timings ?? '', maxStudents: String(batch.maxStudents),
+                        status: batch.status,
+                      })}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-[#505f76] border border-[#c8c5d0] hover:bg-[#f2f3ff] hover:text-[#070235] transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">edit</span>
+                      Edit
+                    </button>
+                    {deleteConfirm === batch.id ? (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => deleteMutation.mutate(batch.id)} disabled={deleteMutation.isPending}
+                          className="px-2 py-1.5 text-xs bg-[#ba1a1a] text-white rounded-lg font-semibold">Confirm</button>
+                        <button onClick={() => setDeleteConfirm(null)}
+                          className="px-2 py-1.5 text-xs border border-[#c8c5d0] text-[#505f76] rounded-lg">✕</button>
                       </div>
-                    </td>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteConfirm(batch.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-[#787680] border border-[#c8c5d0] hover:bg-[#ffdad6] hover:text-[#ba1a1a] transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">delete</span>
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden sm:block bg-white border border-[#c8c5d0] rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#e4e2e6] bg-[#faf8ff]">
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Batch</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Course</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Teacher</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Schedule</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Students</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Status</th>
+                    <th className="text-right px-5 py-3.5 text-xs font-semibold text-[#505f76] uppercase tracking-wide">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[#e4e2e6]">
+                  {batches.map(batch => (
+                    <tr key={batch.id} className="hover:bg-[#faf8ff] transition-colors">
+                      <td className="px-5 py-4">
+                        <p className="font-medium text-[#131b2e] cursor-pointer hover:text-[#070235]"
+                          onClick={() => navigate(`/admin/batches/${batch.id}`)}>
+                          {batch.name}
+                        </p>
+                      </td>
+                      <td className="px-5 py-4 text-[#505f76] text-xs">{batch.courseName}</td>
+                      <td className="px-5 py-4 text-[#505f76] text-xs">{batch.teacherName ?? <span className="text-[#c8c5d0]">Unassigned</span>}</td>
+                      <td className="px-5 py-4 text-xs text-[#505f76]">
+                        <p>{batch.startDate}{batch.endDate ? ` → ${batch.endDate}` : ''}</p>
+                        {batch.timings && <p className="text-[#787680]">{batch.timings}</p>}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-sm font-medium text-[#131b2e]">{batch.studentCount}</span>
+                        <span className="text-xs text-[#787680]">/{batch.maxStudents}</span>
+                      </td>
+                      <td className="px-5 py-4"><StatusBadge status={batch.status} /></td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => navigate(`/admin/batches/${batch.id}`)}
+                            className="p-1.5 text-[#787680] hover:text-[#070235] hover:bg-[#f2f3ff] rounded-lg transition-colors" title="Manage students">
+                            <span className="material-symbols-outlined text-[16px]">group</span>
+                          </button>
+                          <button onClick={() => setModal({
+                            id: batch.id, name: batch.name,
+                            courseId: String(batch.courseId),
+                            teacherId: batch.teacherId ? String(batch.teacherId) : '',
+                            startDate: batch.startDate, endDate: batch.endDate ?? '',
+                            timings: batch.timings ?? '', maxStudents: String(batch.maxStudents),
+                            status: batch.status,
+                          })}
+                            className="p-1.5 text-[#787680] hover:text-[#070235] hover:bg-[#f2f3ff] rounded-lg transition-colors" title="Edit">
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                          </button>
+                          {deleteConfirm === batch.id ? (
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => deleteMutation.mutate(batch.id)} disabled={deleteMutation.isPending}
+                                className="px-2 py-1 text-xs bg-[#ba1a1a] text-white rounded-lg font-semibold">Confirm</button>
+                              <button onClick={() => setDeleteConfirm(null)}
+                                className="px-2 py-1 text-xs border border-[#c8c5d0] text-[#505f76] rounded-lg">✕</button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setDeleteConfirm(batch.id)}
+                              className="p-1.5 text-[#787680] hover:text-[#ba1a1a] hover:bg-[#ffdad6] rounded-lg transition-colors">
+                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

@@ -106,7 +106,7 @@ export default function AdminDashboard() {
 
   return (
     <DashboardShell navItems={ADMIN_NAV}>
-      <div className="max-w-5xl mx-auto space-y-4">
+      <div className="max-w-6xl mx-auto space-y-4">
 
         {/* ── Page header ── */}
         <div className="flex items-center justify-between">

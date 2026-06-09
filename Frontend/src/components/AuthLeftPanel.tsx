@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Logo from './Logo';
 
 const BG_IMAGE =
@@ -23,7 +24,7 @@ export default function AuthLeftPanel() {
         }}
       >
         <div className="max-w-md">
-          <div className="mb-8"><Logo size={44} textColor="white" /></div>
+          <div className="mb-8"><Link to="/"><Logo size={44} textColor="white" /></Link></div>
 
           <h1 className="font-serif text-[32px] leading-[40px] font-semibold mb-4">
             Empowering Excellence through Expert Guidance

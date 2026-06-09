@@ -35,6 +35,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final LoginHistoryRepository loginHistoryRepository;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
@@ -53,7 +54,7 @@ public class AuthService {
     // ─── Login ───────────────────────────────────────────────────────────────
 
     @Transactional
-    public AuthResult login(LoginRequest request) {
+    public AuthResult login(LoginRequest request, String ip, String userAgent) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
@@ -68,9 +69,45 @@ public class AuthService {
             throw new BadRequestException("Your account is pending admin approval");
         }
 
+        loginHistoryRepository.save(LoginHistory.builder()
+                .user(user)
+                .ipAddress(ip)
+                .userAgent(userAgent)
+                .browser(parseBrowser(userAgent))
+                .os(parseOs(userAgent))
+                .device(parseDevice(userAgent))
+                .build());
+
         String accessToken  = jwtService.generateAccessToken(toUserDetails(user));
         String refreshToken = createRefreshToken(user);
         return new AuthResult(buildResponse(accessToken, user), refreshToken);
+    }
+
+    private String parseBrowser(String ua) {
+        if (ua == null) return "Unknown";
+        if (ua.contains("Edg/"))     return "Edge";
+        if (ua.contains("OPR/") || ua.contains("Opera")) return "Opera";
+        if (ua.contains("Chrome/"))  return "Chrome";
+        if (ua.contains("Firefox/")) return "Firefox";
+        if (ua.contains("Safari/") && !ua.contains("Chrome")) return "Safari";
+        return "Other";
+    }
+
+    private String parseOs(String ua) {
+        if (ua == null) return "Unknown";
+        if (ua.contains("Windows NT")) return "Windows";
+        if (ua.contains("Mac OS X"))   return "macOS";
+        if (ua.contains("Android"))    return "Android";
+        if (ua.contains("iPhone") || ua.contains("iPad")) return "iOS";
+        if (ua.contains("Linux"))      return "Linux";
+        return "Other";
+    }
+
+    private String parseDevice(String ua) {
+        if (ua == null) return "Unknown";
+        if (ua.contains("Mobile") || ua.contains("Android") || ua.contains("iPhone")) return "Mobile";
+        if (ua.contains("iPad") || ua.contains("Tablet")) return "Tablet";
+        return "Desktop";
     }
 
     // ─── Register ────────────────────────────────────────────────────────────

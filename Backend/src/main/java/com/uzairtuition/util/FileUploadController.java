@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/admin/upload")
+@RequestMapping("/api/upload")
 @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
 @RequiredArgsConstructor
 public class FileUploadController {

@@ -1,5 +1,7 @@
 package com.uzairtuition.attendance;
 
+import com.uzairtuition.batch.Batch;
+import com.uzairtuition.batch.BatchRepository;
 import com.uzairtuition.batch.BatchStudentRepository;
 import com.uzairtuition.classsession.ClassSession;
 import com.uzairtuition.classsession.ClassSessionRepository;
@@ -23,6 +25,7 @@ public class AttendanceService {
     private final ClassSessionRepository classSessionRepository;
     private final BatchStudentRepository batchStudentRepository;
     private final UserRepository userRepository;
+    private final BatchRepository batchRepository;
 
     private static final Set<String> VALID_STATUSES = Set.of("PRESENT", "ABSENT", "LATE");
 
@@ -97,6 +100,30 @@ public class AttendanceService {
                     (int) presentCount, (int) lateCount, (int) absentCount, pct
             ));
         }
+        return summaries;
+    }
+
+    // Admin: per-batch attendance summary across all batches
+    public List<StudentAttendanceSummary> getAllBatchSummaries() {
+        List<Batch> batches = batchRepository.findAll();
+        List<StudentAttendanceSummary> summaries = new ArrayList<>();
+        for (Batch batch : batches) {
+            List<ClassSession> sessions = classSessionRepository.findByBatchIdOrderBySessionDateDesc(batch.getId());
+            int totalSessions = sessions.size();
+            if (totalSessions == 0) continue;
+            List<Attendance> records = sessions.stream()
+                    .flatMap(s -> attendanceRepository.findBySessionId(s.getId()).stream())
+                    .toList();
+            long present = records.stream().filter(a -> "PRESENT".equals(a.getStatus())).count();
+            long late    = records.stream().filter(a -> "LATE".equals(a.getStatus())).count();
+            long absent  = records.stream().filter(a -> "ABSENT".equals(a.getStatus())).count();
+            int pct = (int) Math.round((present + late) * 100.0 / totalSessions);
+            summaries.add(new StudentAttendanceSummary(
+                    batch.getId(), batch.getName(), totalSessions,
+                    (int) present, (int) late, (int) absent, pct
+            ));
+        }
+        summaries.sort((a, b) -> b.percentage() - a.percentage());
         return summaries;
     }
 

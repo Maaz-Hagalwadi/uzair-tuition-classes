@@ -17,6 +17,12 @@ public class BatchController {
     private final BatchService batchService;
     private final UserRepository userRepository;
 
+    // Public — for landing page
+    @GetMapping("/api/public/batches")
+    public List<BatchResponse> publicList() {
+        return batchService.getUpcomingAndActiveBatches();
+    }
+
     // Admin
     @GetMapping("/api/admin/batches")
     @PreAuthorize("hasRole('ADMIN')")

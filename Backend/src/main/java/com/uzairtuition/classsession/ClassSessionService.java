@@ -1,6 +1,8 @@
 package com.uzairtuition.classsession;
 
 import com.uzairtuition.batch.BatchRepository;
+import com.uzairtuition.batch.BatchStudentRepository;
+import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,7 +19,9 @@ public class ClassSessionService {
 
     private final ClassSessionRepository sessionRepository;
     private final BatchRepository batchRepository;
+    private final BatchStudentRepository batchStudentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public List<ClassSessionResponse> getBatchSessions(Long batchId) {
         return sessionRepository.findByBatchIdOrderBySessionDateAscStartTimeAsc(batchId)
@@ -51,7 +55,17 @@ public class ClassSessionService {
                 .meetingPlatform(req.meetingPlatform())
                 .createdBy(creator)
                 .build();
-        return ClassSessionResponse.from(sessionRepository.save(session));
+        ClassSessionResponse response = ClassSessionResponse.from(sessionRepository.save(session));
+
+        batchStudentRepository.findByBatchIdOrderByEnrolledAtDesc(batchId)
+                .forEach(bs -> notificationService.createForUser(
+                        bs.getStudent(), "NEW_SESSION",
+                        "New Session Scheduled",
+                        req.title().trim() + " on " + req.sessionDate() + " at " + req.startTime(),
+                        session.getId()
+                ));
+
+        return response;
     }
 
     @Transactional

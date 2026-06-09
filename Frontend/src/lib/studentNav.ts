@@ -9,5 +9,7 @@ export const STUDENT_NAV: NavItem[] = [
   { icon: 'fact_check',     label: 'Attendance',     href: '/student/attendance' },
   { icon: 'campaign',       label: 'Announcements', href: '/student/announcements' },
   { icon: 'payments',       label: 'Payments',       href: '/student/payments' },
-  { icon: 'person',         label: 'Profile',    href: '/student/profile' },
+  { icon: 'auto_awesome',   label: 'AI Tutor',       href: '/student/ai' },
+  { icon: 'settings', label: 'Settings', href: '/student/settings', bottom: true },
+  { icon: 'help',     label: 'Support',  href: '/student/support',  bottom: true },
 ];

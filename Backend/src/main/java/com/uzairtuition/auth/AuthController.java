@@ -2,6 +2,7 @@ package com.uzairtuition.auth;
 
 import com.uzairtuition.auth.dto.*;
 import com.uzairtuition.exception.BadRequestException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +29,21 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+                                              HttpServletRequest httpRequest,
                                               HttpServletResponse response) {
-        AuthResult result = authService.login(request);
+        String ip        = resolveIp(httpRequest);
+        String userAgent = httpRequest.getHeader("User-Agent");
+        AuthResult result = authService.login(request, ip, userAgent);
         setRefreshTokenCookie(response, result.refreshToken());
         return ResponseEntity.ok(result.response());
+    }
+
+    private String resolveIp(HttpServletRequest req) {
+        String xff = req.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
+        String xri = req.getHeader("X-Real-IP");
+        if (xri != null && !xri.isBlank()) return xri.trim();
+        return req.getRemoteAddr();
     }
 
     @PostMapping("/register")

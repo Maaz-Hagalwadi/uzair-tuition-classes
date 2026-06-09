@@ -86,15 +86,15 @@ export default function StudentAttendancePage() {
 
   return (
     <DashboardShell navItems={STUDENT_NAV}>
-      <div className="max-w-3xl mx-auto space-y-5">
+      <div className="max-w-6xl mx-auto space-y-5">
 
         {/* ── Header ── */}
         <div>
-          <h1 className="font-['Source_Serif_4'] text-[28px] font-semibold text-[#0f172a] leading-tight">
+          <h1 className="font-['Source_Serif_4'] text-[20px] sm:text-[28px] font-semibold text-[#0f172a] leading-tight">
             My Attendance
           </h1>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <p className="text-[13px] text-[#64748b]">Your attendance record across all enrolled batches</p>
+            <p className="text-[11px] sm:text-[13px] text-[#64748b]">Your attendance record across all enrolled batches</p>
             {!isLoading && summaries.length > 0 && (
               <>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#eef2ff] text-[#4f46e5]">

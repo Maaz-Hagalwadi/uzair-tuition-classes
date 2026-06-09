@@ -4,6 +4,7 @@ import com.uzairtuition.batch.Batch;
 import com.uzairtuition.batch.BatchRepository;
 import com.uzairtuition.batch.BatchStudent;
 import com.uzairtuition.batch.BatchStudentRepository;
+import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class EnrollmentService {
     private final BatchStudentRepository batchStudentRepository;
     private final BatchRepository batchRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public EnrollmentRequestResponse requestEnrollment(Long batchId, String studentEmail) {
@@ -41,7 +43,19 @@ public class EnrollmentService {
                 .batch(batch)
                 .status("PENDING")
                 .build();
-        return EnrollmentRequestResponse.from(requestRepository.save(req));
+        EnrollmentRequestResponse response = EnrollmentRequestResponse.from(requestRepository.save(req));
+
+        String notifTitle = "New Enrollment Request";
+        String notifMsg   = student.getFirstName() + " " + student.getLastName()
+                + " has requested to join " + batch.getName() + ".";
+
+        if (batch.getTeacher() != null) {
+            notificationService.createForUser(batch.getTeacher(), "ENROLLMENT_REQUEST", notifTitle, notifMsg, req.getId());
+        }
+        userRepository.findByRoleName("ADMIN")
+                .forEach(admin -> notificationService.createForUser(admin, "ENROLLMENT_REQUEST", notifTitle, notifMsg, req.getId()));
+
+        return response;
     }
 
     public List<EnrollmentRequestResponse> getStudentRequests(String studentEmail) {
@@ -79,7 +93,14 @@ public class EnrollmentService {
         );
 
         req.setStatus("APPROVED");
-        return EnrollmentRequestResponse.from(requestRepository.save(req));
+        EnrollmentRequestResponse result = EnrollmentRequestResponse.from(requestRepository.save(req));
+        notificationService.createForUser(
+                req.getStudent(), "ENROLLMENT_APPROVED",
+                "Enrollment Approved",
+                "Your enrollment in " + req.getBatch().getName() + " has been approved. Welcome!",
+                req.getBatch().getId()
+        );
+        return result;
     }
 
     @Transactional
@@ -90,7 +111,15 @@ public class EnrollmentService {
         }
         req.setStatus("REJECTED");
         req.setNote(note);
-        return EnrollmentRequestResponse.from(requestRepository.save(req));
+        EnrollmentRequestResponse result = EnrollmentRequestResponse.from(requestRepository.save(req));
+        notificationService.createForUser(
+                req.getStudent(), "ENROLLMENT_REJECTED",
+                "Enrollment Not Approved",
+                "Your enrollment request for " + req.getBatch().getName() + " was not approved."
+                        + (note != null && !note.isBlank() ? " Reason: " + note : ""),
+                req.getBatch().getId()
+        );
+        return result;
     }
 
     private EnrollmentRequest findOrThrow(Long id) {

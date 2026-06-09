@@ -55,11 +55,11 @@ export default function StudentQuizzesPage() {
 
   return (
     <DashboardShell navItems={STUDENT_NAV}>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-[22px] font-bold text-[#1e1b4b]">Quizzes</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">
+        <div className="mb-5">
+          <h1 className="font-['Source_Serif_4'] text-[20px] sm:text-[28px] font-semibold text-[#0f172a] leading-tight">Quizzes</h1>
+          <p className="text-[11px] sm:text-[13px] text-[#64748b] mt-0.5">
             {quizzes.length > 0
               ? `${quizzes.length} quiz${quizzes.length !== 1 ? 'zes' : ''} available`
               : 'Quizzes from your teachers will appear here'}
@@ -67,20 +67,21 @@ export default function StudentQuizzesPage() {
         </div>
 
         {quizzesLoading ? (
-          <div className="flex items-center justify-center py-20 text-[#6b7280]">
-            <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>Loading…
+          <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+            <span className="material-symbols-outlined text-[24px] animate-spin mb-2">sync</span>
+            <p className="text-[13px]">Loading…</p>
           </div>
         ) : quizzes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-[#9ca3af]">
-            <span className="material-symbols-outlined text-[48px] mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>quiz</span>
-            <p className="text-sm font-medium">No quizzes available yet</p>
-            <p className="text-xs mt-1">Your teachers will publish quizzes here</p>
+          <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+            <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>quiz</span>
+            <p className="text-[13px] font-medium">No quizzes available yet</p>
+            <p className="text-[11px] mt-1">Your teachers will publish quizzes here</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {byBatch.map(({ batchName, quizzes: batchQuizzes }) => (
               <div key={batchName}>
-                <h2 className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wide mb-3">{batchName}</h2>
+                <h2 className="text-[11px] font-semibold text-[#94a3b8] uppercase tracking-wide mb-3">{batchName}</h2>
                 <div className="space-y-3">
                   {batchQuizzes.map(quiz => {
                     const attempt = attemptMap.get(quiz.id);
@@ -89,11 +90,11 @@ export default function StudentQuizzesPage() {
                       ? Math.round((attempt.score! / attempt.totalMarks) * 100) : null;
 
                     return (
-                      <div key={quiz.id} className="bg-white rounded-xl border border-[#e4e2e6] p-4 flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                      <div key={quiz.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 ${
                           attempted ? 'bg-[#f0fdf4]' : 'bg-[#eef2ff]'
                         }`}>
-                          <span className={`material-symbols-outlined text-[18px] ${
+                          <span className={`material-symbols-outlined text-[17px] sm:text-[18px] ${
                             attempted ? 'text-[#16a34a]' : 'text-[#6366f1]'
                           }`} style={{ fontVariationSettings: "'FILL' 1" }}>
                             {attempted ? 'task_alt' : 'quiz'}
@@ -101,13 +102,13 @@ export default function StudentQuizzesPage() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-[#374151] text-sm">{quiz.title}</p>
-                          <div className="flex items-center gap-3 mt-0.5 text-xs text-[#9ca3af]">
+                          <p className="text-[12px] sm:text-[13px] font-semibold text-[#0f172a]">{quiz.title}</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[11px] text-[#94a3b8]">
                             <span>{quiz.questionCount} question{quiz.questionCount !== 1 ? 's' : ''}</span>
                             {quiz.timeLimitMinutes && <span>{quiz.timeLimitMinutes} min</span>}
                             {attempted && pct !== null && (
                               <span className={`font-semibold ${pct >= 70 ? 'text-[#16a34a]' : pct >= 40 ? 'text-[#f59e0b]' : 'text-[#ef4444]'}`}>
-                                Score: {attempt!.score}/{attempt!.totalMarks} ({pct}%)
+                                {attempt!.score}/{attempt!.totalMarks} ({pct}%)
                               </span>
                             )}
                           </div>
@@ -115,12 +116,12 @@ export default function StudentQuizzesPage() {
 
                         {attempted ? (
                           <Link to={`/student/quizzes/${quiz.id}`}
-                            className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-[#f3f4f6] text-[#6b7280] rounded-lg text-xs font-medium hover:bg-[#e5e7eb]">
+                            className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-[#f1f5f9] text-[#6b7280] rounded-xl text-[11px] font-medium hover:bg-[#e2e8f0]">
                             <span className="material-symbols-outlined text-[13px]">visibility</span>Results
                           </Link>
                         ) : (
                           <Link to={`/student/quizzes/${quiz.id}`}
-                            className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-[#1e1b4b] text-white rounded-lg text-xs font-medium hover:opacity-90">
+                            className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-[#0f172a] text-white rounded-xl text-[11px] font-medium hover:opacity-90">
                             <span className="material-symbols-outlined text-[13px]">play_arrow</span>Start
                           </Link>
                         )}

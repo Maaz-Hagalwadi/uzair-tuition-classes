@@ -11,7 +11,7 @@ export default function Hero() {
         <div className="space-y-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-[rgba(30,27,75,0.1)] text-[#1e1b4b] rounded-full">
             <span className="material-symbols-outlined text-[16px]">school</span>
-            <span className="text-xs font-medium">Expert Tuition Classes · Grade 9–12</span>
+            <span className="text-xs font-medium">Expert Tuition Classes · Grade 7–12</span>
           </div>
 
           <h1 className="font-headline text-[#0f172a] leading-tight text-4xl lg:text-5xl font-bold tracking-tight">
@@ -21,7 +21,7 @@ export default function Hero() {
 
           <p className="text-base text-[#464555] max-w-md leading-relaxed">
             Master Maths, Physics, and Chemistry with expert tutors. Small batches,
-            personalised attention, and consistent results since 2016.
+            personalised attention, and consistent results since 2022.
           </p>
 
           <div className="flex flex-wrap gap-3 pt-2">
@@ -56,7 +56,7 @@ export default function Hero() {
                 <span className="material-symbols-outlined text-[18px]">trending_up</span>
               </div>
               <div>
-                <div className="font-headline font-bold text-xs">95% Pass Rate</div>
+                <div className="font-headline font-bold text-xs">100% Pass Rate</div>
                 <div className="text-[#464555] text-[11px]">Consistent results</div>
               </div>
             </div>

@@ -22,6 +22,12 @@ public class BatchService {
     private final UserRepository userRepository;
     private final EnrollmentRequestRepository enrollmentRequestRepository;
 
+    public List<BatchResponse> getUpcomingAndActiveBatches() {
+        return batchRepository.findByStatusInOrderByStartDateDesc(List.of("UPCOMING", "ACTIVE")).stream()
+                .map(b -> BatchResponse.from(b, batchStudentRepository.countByBatchId(b.getId())))
+                .toList();
+    }
+
     public List<BatchResponse> getAllBatches(String status) {
         List<Batch> batches = (status != null && !status.isBlank())
                 ? batchRepository.findByStatusOrderByStartDateDesc(status.toUpperCase())

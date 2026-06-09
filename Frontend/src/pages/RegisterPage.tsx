@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
-import { LOGO_B64 } from '../lib/logo';
 import AuthLeftPanel from '../components/AuthLeftPanel';
+import Logo from '../components/Logo';
 
 type Role = 'STUDENT' | 'TEACHER';
 
@@ -19,15 +19,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const MicrosoftIcon = () => (
-  <svg className="w-5 h-5 shrink-0" viewBox="0 0 23 23">
-    <path d="M0 0h11v11H0z" fill="#f35325" />
-    <path d="M12 0h11v11H12z" fill="#81bc06" />
-    <path d="M0 12h11v11H0z" fill="#05a6f0" />
-    <path d="M12 12h11v11H12z" fill="#ffba08" />
-  </svg>
-);
-
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
   return (
@@ -39,7 +30,7 @@ function FieldError({ msg }: { msg?: string }) {
 }
 
 function getInputClass(hasError: boolean, withIcon = false) {
-  const base = `block w-full ${withIcon ? 'pl-10 pr-4' : 'px-4'} py-3 bg-white border rounded-lg text-sm text-[#131b2e] placeholder-[#787680] focus:outline-none focus:ring-2 transition-all duration-200`;
+  const base = `block w-full ${withIcon ? 'pl-10 pr-4' : 'px-4'} py-3 bg-white border rounded-xl text-sm text-[#131b2e] placeholder-[#787680] focus:outline-none focus:ring-2 transition-all duration-200`;
   return `${base} ${
     hasError
       ? 'border-[#ba1a1a] focus:border-[#ba1a1a] focus:ring-[#ba1a1a]/10'
@@ -190,7 +181,8 @@ export default function RegisterPage() {
                 mark_email_read
               </span>
             </div>
-            <h2 className="font-serif text-[32px] leading-[40px] font-semibold text-[#070235] mb-3">
+            <h2 className="text-[32px] leading-[40px] font-bold text-[#070235] mb-3"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               Check your email
             </h2>
             <p className="text-sm text-[#505f76] leading-relaxed">
@@ -218,47 +210,46 @@ export default function RegisterPage() {
     <main className="flex w-full h-screen overflow-hidden">
       <AuthLeftPanel />
 
-      <section className="w-full lg:w-1/2 flex items-center justify-center bg-[#faf8ff] px-6 md:px-12 lg:px-24 overflow-y-auto">
-        <div className="w-full max-w-md py-12">
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-8 flex justify-center">
-            <img src={LOGO_B64} alt="Uzair Tuition" className="h-12 w-auto" />
-          </div>
+      {/* Mobile navbar */}
+      <nav className="fixed top-0 left-0 right-0 lg:hidden flex items-center justify-between px-5 h-14 bg-white border-b border-[#e4e2e6] z-50">
+        <Link to="/"><Logo size={28} textColor="#1e1b4b" /></Link>
+        <Link to="/" className="flex items-center justify-center w-8 h-8 text-[#505f76] hover:text-[#070235] transition-colors">
+          <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+        </Link>
+      </nav>
 
-          <div className="text-center lg:text-left mb-10">
-            <h2 className="font-serif text-[32px] leading-[40px] font-semibold text-[#070235] mb-2">
-              Create Account
+      <section className="w-full lg:w-1/2 flex items-start justify-center bg-[#faf8ff] px-6 md:px-12 lg:px-24 overflow-y-auto">
+        <div className="w-full max-w-md pt-16 lg:pt-10 pb-12">
+
+          <div className="text-center lg:text-left mb-8">
+            <h2 className="text-[26px] lg:text-[32px] leading-tight font-bold text-[#070235] mb-2"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Create account.
             </h2>
-            <p className="text-sm text-[#505f76]">
+            <p className="text-[13px] text-[#505f76]">
               Join thousands of students and educators on our platform.
             </p>
           </div>
 
-          {/* Social buttons */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          {/* Google */}
+          <div className="mb-6">
             <button
               type="button"
-              className="flex items-center justify-center gap-3 px-4 py-3 border border-[#c8c5d0] rounded-lg hover:bg-[#f2f3ff] transition-all duration-200 text-sm text-[#070235]"
+              onClick={() => { window.location.href = '/oauth2/authorization/google'; }}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#c8c5d0] rounded-xl bg-white hover:bg-[#f2f3ff] transition-all duration-200 text-sm text-[#070235]"
             >
               <GoogleIcon />
-              <span>Google</span>
-            </button>
-            <button
-              type="button"
-              className="flex items-center justify-center gap-3 px-4 py-3 border border-[#c8c5d0] rounded-lg hover:bg-[#f2f3ff] transition-all duration-200 text-sm text-[#070235]"
-            >
-              <MicrosoftIcon />
-              <span>Microsoft</span>
+              <span className="font-medium">Continue with Google</span>
             </button>
           </div>
 
           {/* Divider */}
-          <div className="relative mb-8">
+          <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[#c8c5d0]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-4 bg-[#faf8ff] text-[#505f76] font-mono text-xs tracking-widest uppercase">
+              <span className="px-4 bg-[#faf8ff] text-[#505f76] text-[11px] tracking-widest uppercase">
                 Or register with email
               </span>
             </div>
@@ -266,7 +257,7 @@ export default function RegisterPage() {
 
           {/* Server error */}
           {serverError && (
-            <div className="mb-6 flex items-start gap-2 bg-[#ffdad6] border border-[#ba1a1a]/30 text-[#93000a] rounded-lg px-4 py-3 text-sm">
+            <div className="mb-6 flex items-start gap-2 bg-[#ffdad6] border border-[#ba1a1a]/30 text-[#93000a] rounded-xl px-4 py-3 text-sm">
               <span className="material-symbols-outlined text-[18px] mt-0.5 shrink-0">error</span>
               {serverError}
             </div>
@@ -275,14 +266,14 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             {/* Role selector */}
             <div>
-              <label className="block text-sm font-semibold text-[#070235] mb-2">I am a…</label>
+              <label className="block text-[13px] font-medium text-[#070235] mb-1.5">I am a…</label>
               <div className="grid grid-cols-2 gap-3">
                 {(['STUDENT', 'TEACHER'] as Role[]).map((r) => (
                   <button
                     key={r}
                     type="button"
                     onClick={() => setRole(r)}
-                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-200 ${
                       role === r
                         ? 'border-[#070235] bg-[#eaedff] text-[#070235]'
                         : 'border-[#c8c5d0] bg-white text-[#505f76] hover:bg-[#f2f3ff]'
@@ -300,27 +291,27 @@ export default function RegisterPage() {
             {/* Name row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-[#070235] mb-2">First name</label>
+                <label className="block text-[13px] font-medium text-[#070235] mb-1.5">First name</label>
                 <input
                   type="text"
                   value={firstName}
                   onChange={(e) => changeField('firstName', e.target.value, setFirstName)}
                   onBlur={() => blurField('firstName', firstName)}
                   autoComplete="given-name"
-                  placeholder="Ali"
+                  placeholder="Enter first name"
                   className={getInputClass(!!errors.firstName && !!touched.firstName)}
                 />
                 {touched.firstName && <FieldError msg={errors.firstName} />}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[#070235] mb-2">Last name</label>
+                <label className="block text-[13px] font-medium text-[#070235] mb-1.5">Last name</label>
                 <input
                   type="text"
                   value={lastName}
                   onChange={(e) => changeField('lastName', e.target.value, setLastName)}
                   onBlur={() => blurField('lastName', lastName)}
                   autoComplete="family-name"
-                  placeholder="Khan"
+                  placeholder="Enter last name"
                   className={getInputClass(!!errors.lastName && !!touched.lastName)}
                 />
                 {touched.lastName && <FieldError msg={errors.lastName} />}
@@ -329,7 +320,7 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-semibold text-[#070235] mb-2">Email Address</label>
+              <label className="block text-[13px] font-medium text-[#070235] mb-1.5">Email address</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#505f76]">
                   <span className="material-symbols-outlined text-[20px]">mail</span>
@@ -340,7 +331,7 @@ export default function RegisterPage() {
                   onChange={(e) => changeField('email', e.target.value, setEmail)}
                   onBlur={() => blurField('email', email)}
                   autoComplete="email"
-                  placeholder="name@university.edu"
+                  placeholder="Enter your email"
                   className={getInputClass(!!errors.email && !!touched.email, true)}
                 />
               </div>
@@ -349,7 +340,7 @@ export default function RegisterPage() {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-semibold text-[#070235] mb-2">
+              <label className="block text-[13px] font-medium text-[#070235] mb-1.5">
                 Phone <span className="font-normal text-[#787680]">(optional)</span>
               </label>
               <div className="relative">
@@ -362,7 +353,7 @@ export default function RegisterPage() {
                   onChange={(e) => changeField('phone', e.target.value, setPhone)}
                   onBlur={() => blurField('phone', phone)}
                   autoComplete="tel"
-                  placeholder="+92 300 0000000"
+                  placeholder="Enter your phone number"
                   className={getInputClass(!!errors.phone && !!touched.phone, true)}
                 />
               </div>
@@ -371,7 +362,7 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-semibold text-[#070235] mb-2">Password</label>
+              <label className="block text-[13px] font-medium text-[#070235] mb-1.5">Password</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#505f76]">
                   <span className="material-symbols-outlined text-[20px]">lock</span>
@@ -382,8 +373,8 @@ export default function RegisterPage() {
                   onChange={(e) => changeField('password', e.target.value, setPassword)}
                   onBlur={() => blurField('password', password)}
                   autoComplete="new-password"
-                  placeholder="Min. 6 characters"
-                  className={`block w-full pl-10 pr-10 py-3 bg-white border rounded-lg text-sm text-[#131b2e] placeholder-[#787680] focus:outline-none focus:ring-2 transition-all duration-200 ${
+                  placeholder="Enter your password"
+                  className={`block w-full pl-10 pr-10 py-3 bg-white border rounded-xl text-sm text-[#131b2e] placeholder-[#787680] focus:outline-none focus:ring-2 transition-all duration-200 ${
                     errors.password && touched.password
                       ? 'border-[#ba1a1a] focus:border-[#ba1a1a] focus:ring-[#ba1a1a]/10'
                       : 'border-[#c8c5d0] focus:border-[#070235] focus:ring-[#070235]/10'
@@ -401,7 +392,6 @@ export default function RegisterPage() {
               </div>
               {touched.password && <FieldError msg={errors.password} />}
 
-              {/* Password strength meter */}
               {password && !errors.password && (
                 <div className="mt-2">
                   <div className="flex gap-1 mb-1">
@@ -426,7 +416,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-lg text-white bg-[#070235] hover:bg-[#1e1b4b] text-base font-semibold shadow-sm transition-all duration-300 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-1"
+              className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-white bg-[#070235] hover:bg-[#1e1b4b] text-[15px] font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-1"
             >
               {loading && (
                 <span className="material-symbols-outlined text-[20px] animate-spin">sync</span>
@@ -435,7 +425,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-[#505f76]">
+          <p className="mt-7 text-center text-[13px] text-[#505f76]">
             Already have an account?{' '}
             <Link to="/login" className="font-semibold text-[#070235] hover:underline">
               Sign in

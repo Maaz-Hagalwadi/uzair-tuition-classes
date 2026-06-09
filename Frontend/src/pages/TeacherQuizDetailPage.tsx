@@ -192,28 +192,28 @@ export default function TeacherQuizDetailPage() {
 
   return (
     <DashboardShell navItems={TEACHER_NAV}>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-[#9ca3af] mb-4">
+        <div className="flex items-center gap-1.5 text-[11px] text-[#94a3b8] mb-4">
           <Link to="/teacher/quizzes" className="hover:text-[#6366f1]">Quizzes</Link>
-          <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-          <span className="text-[#374151]">{summary.title}</span>
+          <span className="material-symbols-outlined text-[13px]">chevron_right</span>
+          <span className="text-[#374151] truncate">{summary.title}</span>
         </div>
 
         {/* Header */}
-        <div className="bg-white rounded-xl border border-[#e4e2e6] p-5 mb-5">
+        <div className="bg-white rounded-2xl border border-[#e2e8f0] p-4 sm:p-5 mb-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-lg font-bold text-[#1e1b4b]">{summary.title}</h1>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <h1 className="text-[16px] sm:text-lg font-bold text-[#0f172a]">{summary.title}</h1>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
                   style={{ backgroundColor: meta.bg, color: meta.text }}>
                   {meta.label}
                 </span>
               </div>
-              <p className="text-xs text-[#9ca3af]">{summary.batchName}</p>
-              {summary.description && <p className="text-sm text-[#6b7280] mt-1">{summary.description}</p>}
-              <div className="flex items-center gap-3 mt-2 text-xs text-[#9ca3af]">
+              <p className="text-[11px] text-[#94a3b8]">{summary.batchName}</p>
+              {summary.description && <p className="text-[12px] sm:text-[13px] text-[#6b7280] mt-1">{summary.description}</p>}
+              <div className="flex items-center gap-3 mt-2 text-[11px] text-[#94a3b8]">
                 <span>{questions.length} question{questions.length !== 1 ? 's' : ''}</span>
                 {summary.timeLimitMinutes && <span>{summary.timeLimitMinutes} min limit</span>}
               </div>
@@ -222,11 +222,11 @@ export default function TeacherQuizDetailPage() {
               <button
                 onClick={() => statusMutation.mutate(nextStatus)}
                 disabled={statusMutation.isPending}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-colors ${
                   summary.status === 'DRAFT'
                     ? 'bg-[#6366f1] text-white hover:bg-[#4f46e5]'
                     : summary.status === 'PUBLISHED'
-                    ? 'bg-[#f3f4f6] text-[#6b7280] hover:bg-[#e5e7eb]'
+                    ? 'bg-[#f1f5f9] text-[#6b7280] hover:bg-[#e2e8f0]'
                     : 'bg-[#f0fdf4] text-[#16a34a] hover:bg-[#dcfce7]'
                 }`}>
                 <span className="material-symbols-outlined text-[13px]">
@@ -245,43 +245,43 @@ export default function TeacherQuizDetailPage() {
 
         {/* Questions */}
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[#1e1b4b]">Questions</h2>
+          <h2 className="text-[13px] font-semibold text-[#0f172a]">Questions</h2>
           <button onClick={() => setShowAddQ(true)}
-            className="flex items-center gap-1 px-3 py-1.5 bg-[#eef2ff] text-[#6366f1] rounded-lg text-xs font-medium hover:bg-[#e0e7ff] transition-colors">
+            className="flex items-center gap-1 px-3 py-1.5 bg-[#eef2ff] text-[#6366f1] rounded-xl text-[11px] font-medium hover:bg-[#e0e7ff] transition-colors">
             <span className="material-symbols-outlined text-[13px]">add</span>Add Question
           </button>
         </div>
 
         {questions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-[#9ca3af] bg-white rounded-xl border border-[#e4e2e6]">
-            <span className="material-symbols-outlined text-[48px] mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>help</span>
-            <p className="text-sm font-medium">No questions yet</p>
-            <p className="text-xs mt-1">Click "Add Question" to get started</p>
+          <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8] bg-white rounded-2xl border border-[#e2e8f0]">
+            <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>help</span>
+            <p className="text-[13px] font-medium">No questions yet</p>
+            <p className="text-[11px] mt-1">Click "Add Question" to get started</p>
           </div>
         ) : (
           <div className="space-y-3">
             {questions.map((q, qi) => (
-              <div key={q.id} className="bg-white rounded-xl border border-[#e4e2e6] p-4">
+              <div key={q.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-3 sm:p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
-                    <div className="flex items-start gap-2 mb-3">
-                      <span className="text-xs font-bold text-[#9ca3af] shrink-0 mt-0.5">Q{qi + 1}</span>
-                      <p className="text-sm font-medium text-[#374151]">{q.questionText}</p>
+                    <div className="flex items-start gap-2 mb-2.5">
+                      <span className="text-[11px] font-bold text-[#94a3b8] shrink-0 mt-0.5">Q{qi + 1}</span>
+                      <p className="text-[12px] sm:text-[13px] font-medium text-[#374151]">{q.questionText}</p>
                     </div>
                     <div className="space-y-1.5 pl-5">
                       {q.options.map(opt => (
-                        <div key={opt.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs ${
+                        <div key={opt.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] ${
                           opt.isCorrect ? 'bg-[#f0fdf4] text-[#16a34a] font-medium' : 'text-[#6b7280]'
                         }`}>
                           {opt.isCorrect && (
-                            <span className="material-symbols-outlined text-[14px] text-[#16a34a]">check_circle</span>
+                            <span className="material-symbols-outlined text-[13px] text-[#16a34a]">check_circle</span>
                           )}
-                          {!opt.isCorrect && <span className="w-3.5 h-3.5 rounded-full border border-[#d1d5db] shrink-0" />}
+                          {!opt.isCorrect && <span className="w-3 h-3 rounded-full border border-[#d1d5db] shrink-0" />}
                           {opt.optionText}
                         </div>
                       ))}
                     </div>
-                    <p className="text-[10px] text-[#9ca3af] mt-2 pl-5">{q.marks} mark{q.marks !== 1 ? 's' : ''}</p>
+                    <p className="text-[10px] text-[#94a3b8] mt-2 pl-5">{q.marks} mark{q.marks !== 1 ? 's' : ''}</p>
                   </div>
                   <button onClick={() => { if (window.confirm('Delete this question?')) deleteQuestionMutation.mutate(q.id); }}
                     className="text-[#9ca3af] hover:text-[#ef4444] shrink-0">

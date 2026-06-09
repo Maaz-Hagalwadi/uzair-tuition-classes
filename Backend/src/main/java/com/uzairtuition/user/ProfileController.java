@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 import java.util.Map;
@@ -25,6 +26,12 @@ public class ProfileController {
     @PutMapping
     public UserResponse updateProfile(Principal principal, @Valid @RequestBody UpdateProfileRequest req) {
         return profileService.updateProfile(principal.getName(), req);
+    }
+
+    @PostMapping("/picture")
+    public UserResponse uploadPicture(Principal principal,
+                                      @RequestParam("file") MultipartFile file) {
+        return profileService.uploadProfilePicture(principal.getName(), file);
     }
 
     @PutMapping("/password")

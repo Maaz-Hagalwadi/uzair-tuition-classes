@@ -57,4 +57,11 @@ public class AttendanceController {
     public List<AttendanceResponse> getBatchAttendance(@PathVariable Long batchId) {
         return attendanceService.getBatchAttendance(batchId);
     }
+
+    // Admin: all-batches attendance summary for reports
+    @GetMapping("/api/admin/attendance/summary")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<StudentAttendanceSummary> getAllBatchSummaries() {
+        return attendanceService.getAllBatchSummaries();
+    }
 }

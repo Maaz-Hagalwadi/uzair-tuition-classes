@@ -2,6 +2,7 @@ package com.uzairtuition.payment;
 
 import com.uzairtuition.batch.Batch;
 import com.uzairtuition.batch.BatchRepository;
+import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final BatchRepository batchRepository;
+    private final NotificationService notificationService;
 
     public List<PaymentResponse> getAll(String status) {
         List<Payment> payments = (status != null && !status.isBlank())
@@ -73,8 +75,19 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found."));
 
-        payment.setStatus(status.toUpperCase());
-        return PaymentResponse.from(paymentRepository.save(payment));
+        String newStatus = status.toUpperCase();
+        payment.setStatus(newStatus);
+        PaymentResponse response = PaymentResponse.from(paymentRepository.save(payment));
+
+        String msg = switch (newStatus) {
+            case "PAID"    -> "Your payment for " + payment.getBatch().getName() + " has been marked as Paid.";
+            case "OVERDUE" -> "Your payment for " + payment.getBatch().getName() + " is now Overdue. Please settle it soon.";
+            case "WAIVED"  -> "Your payment for " + payment.getBatch().getName() + " has been waived.";
+            default        -> "Your payment status for " + payment.getBatch().getName() + " has been updated to " + newStatus + ".";
+        };
+        notificationService.createForUser(payment.getStudent(), "PAYMENT_UPDATED", "Payment Update", msg, payment.getId());
+
+        return response;
     }
 
     @Transactional

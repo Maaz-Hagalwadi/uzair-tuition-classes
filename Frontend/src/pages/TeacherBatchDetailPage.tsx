@@ -240,22 +240,22 @@ function AnnouncementsTab({ batchId }: { batchId: number }) {
     <div>
       <div className="flex justify-end mb-3">
         <button onClick={() => setShowForm(v => !v)}
-          className="flex items-center gap-1 px-3 py-1.5 bg-[#1e1b4b] text-white rounded-lg text-xs font-medium hover:opacity-90">
+          className="flex items-center gap-1 px-3 py-1.5 bg-[#0f172a] text-white rounded-xl text-[12px] font-medium hover:opacity-90">
           <span className="material-symbols-outlined text-[13px]">{showForm ? 'close' : 'add'}</span>
           {showForm ? 'Cancel' : 'New Announcement'}
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-xl border border-[#e4e2e6] p-4 mb-4 space-y-3">
-          {error && <p className="text-xs text-red-500">{error}</p>}
+        <div className="bg-white rounded-2xl border border-[#e2e8f0] p-4 mb-4 space-y-3">
+          {error && <p className="text-[11px] text-red-500">{error}</p>}
           <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title *"
-            className="w-full px-3 py-2 border border-[#e4e2e6] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]/30" />
+            className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl text-[12px] sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]/30" />
           <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Message *" rows={3}
-            className="w-full px-3 py-2 border border-[#e4e2e6] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]/30 resize-none" />
+            className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl text-[12px] sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]/30 resize-none" />
           <div className="flex justify-end">
             <button onClick={handlePost} disabled={!title.trim() || !content.trim() || saving}
-              className="flex items-center gap-1 px-4 py-2 bg-[#6366f1] text-white rounded-lg text-xs font-medium hover:opacity-90 disabled:opacity-50">
+              className="flex items-center gap-1 px-4 py-2 bg-[#6366f1] text-white rounded-xl text-[12px] font-medium hover:opacity-90 disabled:opacity-50">
               {saving && <span className="material-symbols-outlined text-[13px] animate-spin">sync</span>}
               {saving ? 'Posting…' : 'Post'}
             </button>
@@ -264,25 +264,26 @@ function AnnouncementsTab({ batchId }: { batchId: number }) {
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12 text-[#6b7280]">
-          <span className="material-symbols-outlined text-[20px] animate-spin mr-2">sync</span>Loading…
+        <div className="flex flex-col items-center justify-center py-12 text-[#94a3b8]">
+          <span className="material-symbols-outlined text-[20px] animate-spin mb-2">sync</span>
+          <p className="text-[13px]">Loading…</p>
         </div>
       ) : announcements.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-[#9ca3af]">
-          <span className="material-symbols-outlined text-[40px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>campaign</span>
-          <p className="text-sm">No announcements yet</p>
+        <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+          <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>campaign</span>
+          <p className="text-[13px]">No announcements yet</p>
         </div>
       ) : (
         <div className="space-y-3">
           {announcements.map(a => (
-            <div key={a.id} className="bg-white rounded-xl border border-[#e4e2e6] p-4">
+            <div key={a.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[#374151] text-sm">{a.title}</p>
-                  <p className="text-xs text-[#9ca3af] mt-0.5">
+                  <p className="text-[13px] font-semibold text-[#0f172a]">{a.title}</p>
+                  <p className="text-[11px] text-[#94a3b8] mt-0.5">
                     {a.publishedByName} · {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
-                  <p className="text-sm text-[#6b7280] mt-2 whitespace-pre-wrap">{a.content}</p>
+                  <p className="text-[12px] sm:text-[13px] text-[#6b7280] mt-2 whitespace-pre-wrap">{a.content}</p>
                 </div>
                 <button onClick={() => { if (window.confirm('Delete this announcement?')) deleteMutation.mutate(a.id); }}
                   className="text-[#9ca3af] hover:text-[#ef4444] shrink-0">
@@ -353,93 +354,116 @@ export default function TeacherBatchDetailPage() {
 
   return (
     <DashboardShell navItems={TEACHER_NAV}>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Breadcrumb */}
         <button
           onClick={() => navigate('/teacher/batches')}
-          className="flex items-center gap-1 text-sm text-[#6b7280] hover:text-[#1e1b4b] mb-5 transition-colors"
+          className="flex items-center gap-1 text-[12px] text-[#64748b] hover:text-[#0f172a] mb-4 transition-colors"
         >
-          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
           My Batches
         </button>
 
         {/* Header card */}
-        <div className="bg-white rounded-xl border border-[#e4e2e6] p-5 mb-5">
+        <div className="bg-white rounded-2xl border border-[#e2e8f0] p-4 sm:p-5 mb-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold text-[#1e1b4b]">{batch.name}</h1>
-              <p className="text-sm text-[#6b7280] mt-0.5">{batch.courseName}</p>
+              <h1 className="text-[18px] sm:text-xl font-bold text-[#0f172a]">{batch.name}</h1>
+              <p className="text-[12px] sm:text-sm text-[#64748b] mt-0.5">{batch.courseName}</p>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-xs font-semibold shrink-0"
+            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold shrink-0"
               style={{ backgroundColor: statusMeta.bg, color: statusMeta.text }}>
               {batch.status}
             </span>
           </div>
-          <div className="flex flex-wrap gap-4 mt-4 text-xs text-[#6b7280]">
+          <div className="flex flex-wrap gap-3 mt-3 text-[11px] sm:text-xs text-[#64748b]">
             <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[14px]">people</span>
+              <span className="material-symbols-outlined text-[13px]">people</span>
               {batch.studentCount} / {batch.maxStudents} students
             </span>
             {batch.timings && (
               <span className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px]">schedule</span>
+                <span className="material-symbols-outlined text-[13px]">schedule</span>
                 {batch.timings}
               </span>
             )}
             <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+              <span className="material-symbols-outlined text-[13px]">calendar_today</span>
               Started {fmtDate(batch.startDate)}
             </span>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-5">
-          {(['students', 'sessions', 'announcements'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setActiveTab(t)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
-                activeTab === t ? 'bg-[#1e1b4b] text-white' : 'text-[#6b7280] hover:bg-[#f3f4f6]'
-              }`}
-            >
-              {t === 'students' ? `Students (${students.length})` : t === 'sessions' ? `Sessions (${sessions.length})` : 'Announcements'}
-            </button>
-          ))}
+        <div className="overflow-x-auto pb-1 mb-5">
+          <div className="flex gap-1.5 min-w-max">
+            {(['students', 'sessions', 'announcements'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setActiveTab(t)}
+                className={`px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all capitalize ${
+                  activeTab === t ? 'bg-[#0f172a] text-white shadow-sm' : 'bg-[#f1f5f9] text-[#6b7280] hover:bg-[#e2e8f0] hover:text-[#374151]'
+                }`}
+              >
+                {t === 'students' ? `Students (${students.length})` : t === 'sessions' ? `Sessions (${sessions.length})` : 'Announcements'}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Students ── */}
         {activeTab === 'students' && (
-          <div className="bg-white rounded-xl border border-[#e4e2e6]">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
             {students.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-[#9ca3af]">
-                <span className="material-symbols-outlined text-[40px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>people</span>
-                <p className="text-sm">No students enrolled yet</p>
+              <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+                <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>people</span>
+                <p className="text-[13px]">No students enrolled yet</p>
               </div>
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-[#f9fafb] text-[#9ca3af] text-xs uppercase tracking-wide">
-                    <th className="text-left px-5 py-3 font-medium">Student</th>
-                    <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Phone</th>
-                    <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Enrolled</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#f3f4f6]">
-                  {students.map(s => (
-                    <tr key={s.studentId} className="hover:bg-[#fafafa] transition-colors">
-                      <td className="px-5 py-3">
-                        <p className="font-medium text-[#374151]">{s.firstName} {s.lastName}</p>
-                        <p className="text-xs text-[#9ca3af]">{s.email}</p>
-                      </td>
-                      <td className="px-4 py-3 text-[#6b7280] hidden sm:table-cell">{s.phone ?? '—'}</td>
-                      <td className="px-4 py-3 text-xs text-[#9ca3af] hidden md:table-cell">
-                        {new Date(s.enrolledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
+              <>
+                {/* Mobile list */}
+                <div className="sm:hidden divide-y divide-[#f1f5f9]">
+                  {students.map(s => {
+                    const initials = `${s.firstName[0]}${s.lastName[0]}`.toUpperCase();
+                    return (
+                      <div key={s.studentId} className="flex items-center gap-3 px-4 py-3.5">
+                        <div className="w-9 h-9 rounded-full bg-[#eef2ff] flex items-center justify-center shrink-0">
+                          <span className="text-[11px] font-bold text-[#6366f1]">{initials}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-semibold text-[#0f172a] truncate">{s.firstName} {s.lastName}</p>
+                          <p className="text-[11px] text-[#94a3b8] truncate">{s.email}</p>
+                          {s.phone && <p className="text-[10px] text-[#94a3b8]">{s.phone}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Desktop table */}
+                <table className="hidden sm:table w-full text-sm">
+                  <thead>
+                    <tr className="bg-[#f8f9fa] text-[#9ca3af] text-[11px] uppercase tracking-wide border-b border-[#e2e8f0]">
+                      <th className="text-left px-5 py-3 font-semibold">Student</th>
+                      <th className="text-left px-4 py-3 font-semibold">Phone</th>
+                      <th className="text-left px-4 py-3 font-semibold hidden md:table-cell">Enrolled</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[#f1f5f9]">
+                    {students.map(s => (
+                      <tr key={s.studentId} className="hover:bg-[#fafbff] transition-colors">
+                        <td className="px-5 py-3.5">
+                          <p className="text-[13px] font-semibold text-[#0f172a]">{s.firstName} {s.lastName}</p>
+                          <p className="text-[11px] text-[#94a3b8]">{s.email}</p>
+                        </td>
+                        <td className="px-4 py-3.5 text-[12px] text-[#6b7280]">{s.phone ?? '—'}</td>
+                        <td className="px-4 py-3.5 text-[12px] text-[#94a3b8] hidden md:table-cell">
+                          {new Date(s.enrolledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
             )}
           </div>
         )}
@@ -450,17 +474,17 @@ export default function TeacherBatchDetailPage() {
             <div className="flex justify-end mb-3">
               <button
                 onClick={() => setSessionModal(EMPTY)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#1e1b4b] text-white rounded-lg text-sm font-medium hover:opacity-90"
+                className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#0f172a] text-white rounded-xl text-[12px] sm:text-sm font-medium hover:opacity-90"
               >
-                <span className="material-symbols-outlined text-[16px]">add</span>
+                <span className="material-symbols-outlined text-[15px]">add</span>
                 Add Session
               </button>
             </div>
 
             {sessions.length === 0 ? (
-              <div className="bg-white rounded-xl border border-[#e4e2e6] flex flex-col items-center justify-center py-16 text-[#9ca3af]">
-                <span className="material-symbols-outlined text-[40px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>event</span>
-                <p className="text-sm">No sessions scheduled yet</p>
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+                <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>event</span>
+                <p className="text-[13px]">No sessions scheduled yet</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -468,31 +492,31 @@ export default function TeacherBatchDetailPage() {
                   const d = new Date(session.sessionDate);
                   const platform = PLATFORM_META[session.meetingPlatform] ?? PLATFORM_META.OTHER;
                   return (
-                    <div key={session.id} className="bg-white rounded-xl border border-[#e4e2e6] p-4 flex items-start gap-4">
+                    <div key={session.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-3 sm:p-4 flex items-start gap-3 sm:gap-4">
                       {/* Date block */}
-                      <div className="shrink-0 w-14 flex flex-col items-center bg-[#f3f4f6] rounded-lg py-2">
-                        <span className="text-[10px] font-semibold text-[#6b7280] uppercase">{MONTHS[d.getMonth()]}</span>
-                        <span className="text-xl font-bold text-[#1e1b4b] leading-tight">{d.getDate()}</span>
-                        <span className="text-[10px] text-[#9ca3af]">{DAYS[d.getDay()]}</span>
+                      <div className="shrink-0 w-12 sm:w-14 flex flex-col items-center bg-[#f1f5f9] rounded-lg py-2">
+                        <span className="text-[9px] font-semibold text-[#64748b] uppercase">{MONTHS[d.getMonth()]}</span>
+                        <span className="text-[18px] sm:text-xl font-bold text-[#0f172a] leading-tight">{d.getDate()}</span>
+                        <span className="text-[9px] text-[#94a3b8]">{DAYS[d.getDay()]}</span>
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="font-medium text-[#374151] text-sm">{session.title}</p>
+                          <p className="text-[12px] sm:text-[13px] font-medium text-[#374151]">{session.title}</p>
                           {session.meetingPlatform && (
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
                               style={{ backgroundColor: platform.bg, color: platform.text }}>
                               {platform.label}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-[#9ca3af] mt-0.5">
+                        <p className="text-[11px] text-[#94a3b8] mt-0.5">
                           {formatTime(session.startTime)}
                           {session.endTime ? ` – ${formatTime(session.endTime)}` : ''}
                         </p>
                         {session.meetingUrl && (
                           <a href={session.meetingUrl} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 mt-1 text-xs text-[#6366f1] hover:underline">
+                            className="inline-flex items-center gap-1 mt-1 text-[11px] text-[#6366f1] hover:underline">
                             <span className="material-symbols-outlined text-[12px]">link</span>
                             Join meeting
                           </a>
@@ -502,10 +526,10 @@ export default function TeacherBatchDetailPage() {
                       <div className="flex items-center gap-1 shrink-0">
                         <Link
                           to={`/teacher/batches/${batchId}/sessions/${session.id}/attendance`}
-                          className="flex items-center gap-1 px-2 py-1 text-xs text-[#6366f1] bg-[#eef2ff] rounded-lg hover:bg-[#e0e7ff] transition-colors"
+                          className="flex items-center gap-1 px-2 py-1 text-[11px] text-[#6366f1] bg-[#eef2ff] rounded-lg hover:bg-[#e0e7ff] transition-colors"
                         >
                           <span className="material-symbols-outlined text-[13px]">fact_check</span>
-                          Attendance
+                          <span className="hidden sm:inline">Attendance</span>
                         </Link>
                         <button
                           onClick={() => setSessionModal({

@@ -41,66 +41,67 @@ export default function StudentPaymentsPage() {
 
   return (
     <DashboardShell navItems={STUDENT_NAV}>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-[22px] font-bold text-[#1e1b4b]">Payments</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Your fee payment history</p>
+        <div className="mb-5">
+          <h1 className="font-['Source_Serif_4'] text-[20px] sm:text-[28px] font-semibold text-[#0f172a] leading-tight">Payments</h1>
+          <p className="text-[11px] sm:text-[13px] text-[#64748b] mt-0.5">Your fee payment history</p>
         </div>
 
         {/* Summary cards */}
         {payments.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-white rounded-xl border border-[#e4e2e6] p-4">
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-3 sm:p-4">
               <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-[16px] text-[#c2410c]">schedule</span>
-                <p className="text-xs text-[#9ca3af]">Outstanding</p>
+                <span className="material-symbols-outlined text-[15px] text-[#c2410c]">schedule</span>
+                <p className="text-[11px] text-[#94a3b8]">Outstanding</p>
               </div>
-              <p className="text-xl font-bold text-[#c2410c]">{fmtAmount(totalPending)}</p>
+              <p className="text-[16px] sm:text-xl font-bold text-[#c2410c]">{fmtAmount(totalPending)}</p>
             </div>
-            <div className="bg-white rounded-xl border border-[#e4e2e6] p-4">
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-3 sm:p-4">
               <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-[16px] text-[#16a34a]">check_circle</span>
-                <p className="text-xs text-[#9ca3af]">Total Paid</p>
+                <span className="material-symbols-outlined text-[15px] text-[#16a34a]">check_circle</span>
+                <p className="text-[11px] text-[#94a3b8]">Total Paid</p>
               </div>
-              <p className="text-xl font-bold text-[#16a34a]">{fmtAmount(totalPaid)}</p>
+              <p className="text-[16px] sm:text-xl font-bold text-[#16a34a]">{fmtAmount(totalPaid)}</p>
             </div>
           </div>
         )}
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-[#6b7280]">
-            <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>Loading…
+          <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+            <span className="material-symbols-outlined text-[24px] animate-spin mb-2">sync</span>
+            <p className="text-[13px]">Loading…</p>
           </div>
         ) : payments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-[#9ca3af]">
-            <span className="material-symbols-outlined text-[48px] mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
-            <p className="text-sm font-medium">No payment records yet</p>
-            <p className="text-xs mt-1">Your fee records will appear here once added by admin</p>
+          <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+            <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
+            <p className="text-[13px] font-medium">No payment records yet</p>
+            <p className="text-[11px] mt-1">Your fee records will appear here once added by admin</p>
           </div>
         ) : (
           <div className="space-y-3">
             {payments.map(p => {
               const meta = STATUS_META[p.status] ?? STATUS_META.PENDING;
               return (
-                <div key={p.id} className="bg-white rounded-xl border border-[#e4e2e6] p-4 flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                <div key={p.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-3 sm:p-4 flex items-start gap-3 sm:gap-4">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0"
                     style={{ backgroundColor: meta.bg }}>
-                    <span className="material-symbols-outlined text-[18px]" style={{ color: meta.text }}>
+                    <span className="material-symbols-outlined text-[16px] sm:text-[18px]" style={{ color: meta.text }}>
                       {meta.icon}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-[#374151] text-sm">{p.batchName}</p>
-                        <p className="text-xs text-[#9ca3af] mt-0.5">
+                        <p className="text-[12px] sm:text-[13px] font-semibold text-[#374151]">{p.batchName}</p>
+                        <p className="text-[11px] text-[#94a3b8] mt-0.5">
                           {p.paymentDate ? `Paid on ${fmtDate(p.paymentDate)}` : `Added ${fmtDate(p.createdAt)}`}
                         </p>
-                        {p.notes && <p className="text-xs text-[#6b7280] mt-1">{p.notes}</p>}
+                        {p.notes && <p className="text-[11px] text-[#6b7280] mt-1">{p.notes}</p>}
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-bold text-[#1e1b4b] text-base">{fmtAmount(p.amount)}</p>
+                        <p className="text-[13px] sm:text-[15px] font-bold text-[#0f172a]">{fmtAmount(p.amount)}</p>
                         <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
                           style={{ backgroundColor: meta.bg, color: meta.text }}>
                           {meta.label}

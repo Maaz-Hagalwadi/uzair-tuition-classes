@@ -3,11 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { LogoMark } from './Logo';
 import { useAuthStore } from '../stores/authStore';
 import api from '../lib/api';
+import NotificationBell from './NotificationBell';
 
 export interface NavItem {
   icon: string;
   label: string;
   href: string;
+  bottom?: boolean;
 }
 
 interface Props {
@@ -30,6 +32,8 @@ export default function DashboardShell({ navItems, children }: Props) {
     window.location.href = '/login';
   };
 
+  const mainNav   = navItems.filter(i => !i.bottom);
+  const bottomNav = navItems.filter(i => i.bottom);
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '??';
   const roleLabel: Record<string, string> = { STUDENT: 'Student', TEACHER: 'Teacher', ADMIN: 'Admin' };
   const roleProfilePath: Record<string, string> = {
@@ -85,7 +89,7 @@ export default function DashboardShell({ navItems, children }: Props) {
             </p>
           )}
 
-          {navItems.map((item) => {
+          {mainNav.map((item) => {
             const active = location.pathname === item.href;
             return (
               <Link
@@ -94,19 +98,16 @@ export default function DashboardShell({ navItems, children }: Props) {
                 onClick={() => setMobileOpen(false)}
                 title={collapsed ? item.label : undefined}
                 className={`
-                  relative flex items-center gap-3 rounded-full mb-[3px] text-[12px] font-medium
+                  relative flex items-center gap-3 rounded-xl mb-[3px] text-[12px]
                   transition-all duration-150
-                  ${collapsed
-                    ? 'justify-center w-10 h-10 mx-auto'
-                    : 'px-3 py-2'}
+                  ${collapsed ? 'justify-center w-10 h-10 mx-auto' : 'px-3 py-2'}
                   ${active
-                    ? 'bg-[#eef2ff] text-[#4f46e5]'
-                    : 'text-[#4b5563] hover:bg-[#f8fafc] hover:text-[#111827]'}
+                    ? 'bg-[#f1f5f9] text-[#0f172a] font-semibold'
+                    : 'text-[#6b7280] font-medium hover:bg-[#f8fafc] hover:text-[#374151]'}
                 `}
               >
-                {/* Left accent bar for active */}
                 {active && !collapsed && (
-                  <span className="absolute left-0 inset-y-[6px] w-[3px] rounded-full bg-[#6366f1]" />
+                  <span className="absolute left-[2px] top-[6px] bottom-[6px] w-1 rounded-full bg-[#0f172a]" />
                 )}
                 <span
                   className="material-symbols-outlined text-[17px] shrink-0"
@@ -124,13 +125,45 @@ export default function DashboardShell({ navItems, children }: Props) {
 
         {/* Bottom: collapse toggle + sign out */}
         <div className="border-t border-[#e8eaf0] py-2 px-2 shrink-0 space-y-[2px]">
+          {bottomNav.map((item) => {
+            const active = location.pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => setMobileOpen(false)}
+                title={collapsed ? item.label : undefined}
+                className={`
+                  relative flex items-center gap-3 rounded-xl mb-[3px] text-[12px]
+                  transition-all duration-150
+                  ${collapsed ? 'justify-center w-10 h-10 mx-auto' : 'px-3 py-2'}
+                  ${active
+                    ? 'bg-[#f1f5f9] text-[#0f172a] font-semibold'
+                    : 'text-[#6b7280] font-medium hover:bg-[#f8fafc] hover:text-[#374151]'}
+                `}
+              >
+                {active && !collapsed && (
+                  <span className="absolute left-[2px] top-[6px] bottom-[6px] w-1 rounded-full bg-[#0f172a]" />
+                )}
+                <span
+                  className="material-symbols-outlined text-[17px] shrink-0"
+                  style={active
+                    ? { fontVariationSettings: "'FILL' 1" }
+                    : { fontVariationSettings: "'FILL' 0, 'wght' 300" }}
+                >
+                  {item.icon}
+                </span>
+                {!collapsed && item.label}
+              </Link>
+            );
+          })}
           {/* Collapse toggle */}
           <button
             onClick={() => setCollapsed(c => !c)}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className={`
-              hidden lg:flex items-center gap-3 rounded-full text-[12px] font-medium
-              text-[#9ca3af] hover:bg-[#f8fafc] hover:text-[#374151]
+              hidden lg:flex items-center gap-3 rounded-lg text-[12px] font-medium
+              text-[#9ca3af] hover:bg-[#f1f5f9] hover:text-[#374151]
               transition-all duration-150
               ${collapsed ? 'justify-center w-10 h-10 mx-auto' : 'w-full px-3 py-2'}
             `}
@@ -146,7 +179,7 @@ export default function DashboardShell({ navItems, children }: Props) {
             onClick={handleLogout}
             title={collapsed ? 'Sign Out' : undefined}
             className={`
-              flex items-center gap-3 rounded-full text-[12px] font-medium
+              flex items-center gap-3 rounded-lg text-[12px] font-medium
               text-[#ef4444] hover:bg-[#fef2f2]
               transition-all duration-150
               ${collapsed ? 'justify-center w-10 h-10 mx-auto' : 'w-full px-3 py-2'}
@@ -174,16 +207,16 @@ export default function DashboardShell({ navItems, children }: Props) {
             <span className="material-symbols-outlined text-[19px]">menu</span>
           </button>
 
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-2">
+            <LogoMark size={22} />
+            <span className="text-[13px] font-bold text-[#111827] tracking-tight">Uzair TC</span>
+          </div>
+
           <div className="flex-1" />
 
           {/* Notifications */}
-          <button className="relative flex items-center justify-center w-8 h-8 rounded-lg text-[#6b7280] hover:bg-[#f8fafc] hover:text-[#111827] transition-colors">
-            <span className="material-symbols-outlined text-[19px]" style={{ fontVariationSettings: "'wght' 300" }}>
-              notifications
-            </span>
-            {/* Unread dot */}
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
-          </button>
+          <NotificationBell />
 
           <div className="w-px h-5 bg-[#e8eaf0]" />
 
@@ -193,8 +226,10 @@ export default function DashboardShell({ navItems, children }: Props) {
               onClick={() => setProfileOpen(p => !p)}
               className="flex items-center gap-2 pl-1 pr-1.5 py-1 rounded-lg hover:bg-[#f8fafc] transition-colors"
             >
-              <div className="w-7 h-7 rounded-full bg-[#4f46e5] flex items-center justify-center shrink-0">
-                <span className="text-white text-[10px] font-bold">{initials}</span>
+              <div className="w-7 h-7 rounded-full bg-[#4f46e5] flex items-center justify-center shrink-0 overflow-hidden">
+                {user?.profilePictureUrl
+                  ? <img src={user.profilePictureUrl} alt="avatar" className="w-full h-full object-cover" />
+                  : <span className="text-white text-[10px] font-bold">{initials}</span>}
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-[12px] font-semibold text-[#111827] leading-none">

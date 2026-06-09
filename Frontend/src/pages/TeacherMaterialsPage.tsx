@@ -85,7 +85,7 @@ function UploadModal({
       const form = new FormData();
       form.append('file', file);
       form.append('folder', 'materials');
-      const { data: uploadData } = await api.post<{ url: string }>('/admin/upload', form, {
+      const { data: uploadData } = await api.post<{ url: string }>('/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -242,36 +242,36 @@ export default function TeacherMaterialsPage() {
 
   return (
     <DashboardShell navItems={TEACHER_NAV}>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3">
           <div>
-            <h1 className="text-[22px] font-bold text-[#1e1b4b]">Course Materials</h1>
-            <p className="text-sm text-[#6b7280] mt-0.5">
+            <h1 className="font-['Source_Serif_4'] text-[20px] sm:text-[28px] font-semibold text-[#0f172a] leading-tight">Course Materials</h1>
+            <p className="text-[11px] sm:text-[13px] text-[#64748b] mt-0.5">
               {totalMaterials > 0 ? `${totalMaterials} material${totalMaterials !== 1 ? 's' : ''} across ${courses.length} course${courses.length !== 1 ? 's' : ''}` : 'Upload PDFs, videos, and resources for your students'}
             </p>
           </div>
           {courses.length > 0 && (
             <button
               onClick={() => setShowUpload(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#1e1b4b] text-white rounded-lg text-sm font-medium hover:opacity-90"
+              className="w-fit self-end sm:self-auto flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#0f172a] text-white rounded-xl text-[12px] sm:text-sm font-medium hover:opacity-90"
             >
-              <span className="material-symbols-outlined text-[16px]">upload</span>
+              <span className="material-symbols-outlined text-[15px]">upload</span>
               Upload
             </button>
           )}
         </div>
 
         {batchLoading ? (
-          <div className="flex items-center justify-center py-20 text-[#6b7280]">
-            <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-            Loading…
+          <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+            <span className="material-symbols-outlined text-[24px] animate-spin mb-2">sync</span>
+            <p className="text-[13px]">Loading…</p>
           </div>
         ) : courses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-[#9ca3af]">
-            <span className="material-symbols-outlined text-[48px] mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>folder_open</span>
-            <p className="text-sm font-medium">No courses assigned yet</p>
-            <p className="text-xs mt-1">You'll see materials here once you're assigned to a batch</p>
+          <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
+            <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>folder_open</span>
+            <p className="text-[13px] font-medium">No courses assigned yet</p>
+            <p className="text-[11px] mt-1">You'll see materials here once you're assigned to a batch</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -279,22 +279,22 @@ export default function TeacherMaterialsPage() {
               const materials = materialsByCourse[course.id] ?? [];
               const isExpanded = expandedCourse === course.id;
               return (
-                <div key={course.id} className="bg-white rounded-xl border border-[#e4e2e6] overflow-hidden">
+                <div key={course.id} className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
                   {/* Course header — accordion toggle */}
                   <button
                     onClick={() => setExpandedCourse(isExpanded ? null : course.id)}
-                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#fafafa] transition-colors"
+                    className="w-full flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 hover:bg-[#fafbff] transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center shrink-0">
                         <span className="material-symbols-outlined text-[16px] text-[#6366f1]">menu_book</span>
                       </div>
                       <div className="text-left">
-                        <p className="font-semibold text-[#1e1b4b] text-sm">{course.name}</p>
-                        <p className="text-xs text-[#9ca3af]">{materials.length} material{materials.length !== 1 ? 's' : ''}</p>
+                        <p className="text-[13px] font-semibold text-[#0f172a]">{course.name}</p>
+                        <p className="text-[11px] text-[#94a3b8]">{materials.length} material{materials.length !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
-                    <span className="material-symbols-outlined text-[20px] text-[#9ca3af] transition-transform"
+                    <span className="material-symbols-outlined text-[20px] text-[#94a3b8] transition-transform shrink-0"
                       style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}>
                       expand_more
                     </span>
@@ -302,22 +302,22 @@ export default function TeacherMaterialsPage() {
 
                   {/* Materials list */}
                   {isExpanded && (
-                    <div className="border-t border-[#f3f4f6]">
+                    <div className="border-t border-[#e2e8f0]">
                       {materials.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-10 text-[#9ca3af]">
+                        <div className="flex flex-col items-center justify-center py-10 text-[#94a3b8]">
                           <span className="material-symbols-outlined text-[32px] mb-1">folder_open</span>
-                          <p className="text-xs">No materials uploaded for this course</p>
+                          <p className="text-[12px]">No materials uploaded for this course</p>
                         </div>
                       ) : (
-                        <div className="divide-y divide-[#f3f4f6]">
+                        <div className="divide-y divide-[#f1f5f9]">
                           {materials.map(m => (
-                            <div key={m.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[#fafafa] transition-colors">
-                              <span className={`material-symbols-outlined text-[20px] ${fileColor(m.fileType)}`}>
+                            <div key={m.id} className="flex items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-3 hover:bg-[#fafbff] transition-colors">
+                              <span className={`material-symbols-outlined text-[18px] sm:text-[20px] shrink-0 ${fileColor(m.fileType)}`}>
                                 {fileIcon(m.fileType)}
                               </span>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-[#374151] truncate">{m.title}</p>
-                                <p className="text-[10px] text-[#9ca3af]">
+                                <p className="text-[12px] sm:text-[13px] font-medium text-[#374151] truncate">{m.title}</p>
+                                <p className="text-[10px] text-[#94a3b8]">
                                   {m.uploadedByName} · {fmtDate(m.createdAt)}
                                 </p>
                               </div>
@@ -325,9 +325,9 @@ export default function TeacherMaterialsPage() {
                                 href={m.fileUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-xs text-[#6366f1] hover:underline shrink-0"
+                                className="flex items-center gap-1 text-[11px] text-[#6366f1] hover:underline shrink-0"
                               >
-                                <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                                <span className="material-symbols-outlined text-[13px]">open_in_new</span>
                                 View
                               </a>
                             </div>

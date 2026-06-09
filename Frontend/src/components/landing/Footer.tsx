@@ -17,20 +17,15 @@ export default function Footer() {
               Empowering students to achieve academic excellence through expert guidance and personalised attention.
             </p>
             <div className="flex gap-3">
-              {[
-                { icon: 'facebook', label: 'Facebook' },
-                { icon: 'instagram', label: 'Instagram' },
-                { icon: 'youtube_activity', label: 'YouTube' },
-              ].map(s => (
-                <a
-                  key={s.label}
-                  href="#"
-                  className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.08)] hover:bg-[#6366f1] flex items-center justify-center transition-colors"
-                  aria-label={s.label}
-                >
-                  <span className="material-symbols-outlined text-[18px]">{s.icon}</span>
-                </a>
-              ))}
+              <a href="#" aria-label="Facebook" className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.08)] hover:bg-[#6366f1] flex items-center justify-center transition-colors">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+              </a>
+              <a href="#" aria-label="Instagram" className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.08)] hover:bg-[#6366f1] flex items-center justify-center transition-colors">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current stroke-2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+              </a>
+              <a href="#" aria-label="YouTube" className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.08)] hover:bg-[#6366f1] flex items-center justify-center transition-colors">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
+              </a>
             </div>
           </div>
 
@@ -73,9 +68,9 @@ export default function Footer() {
             <h4 className="font-display font-semibold text-sm mb-4 text-white">Contact</h4>
             <ul className="space-y-3">
               {[
-                { icon: 'location_on', text: '123 Education St, Karachi' },
-                { icon: 'call', text: '+92 300 1234567' },
-                { icon: 'mail', text: 'info@uzairtuition.com' },
+                { icon: 'location_on', text: 'Valki, Honnavar, Karnataka 581335' },
+                { icon: 'call', text: '+91 9980386446' },
+                { icon: 'mail', text: 'info.uzairtuitionclasses@gmail.com' },
                 { icon: 'schedule', text: 'Mon–Sat: 9 AM – 7 PM' },
               ].map(item => (
                 <li key={item.icon} className="flex items-start gap-2.5">

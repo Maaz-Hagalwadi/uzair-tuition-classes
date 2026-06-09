@@ -52,9 +52,9 @@ export default function ContactSection() {
 
           <div className="space-y-4">
             {[
-              { icon: 'mail', text: 'info@uzairtuition.com' },
-              { icon: 'call', text: '+92 300 1234567' },
-              { icon: 'location_on', text: '123 Education Street, Karachi' },
+              { icon: 'mail', text: 'info.uzairtuitionclasses@gmail.com' },
+              { icon: 'call', text: '+91 9980386446' },
+              { icon: 'location_on', text: 'Valki, Honnavar, Karnataka 581335' },
               { icon: 'schedule', text: 'Mon–Sat: 9:00 AM – 7:00 PM' },
             ].map((item) => (
               <div key={item.icon} className="flex items-center gap-3">
@@ -91,7 +91,7 @@ export default function ContactSection() {
                 <input
                   required
                   type="text"
-                  placeholder="e.g. Ali Khan"
+                  placeholder="Enter your full name"
                   value={form.fullName}
                   onChange={(e) => set('fullName', e.target.value)}
                   className="w-full border border-[#c7c4d8] rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#1e1b4b] focus:border-[#1e1b4b] outline-none transition-all"
@@ -104,7 +104,7 @@ export default function ContactSection() {
                   <input
                     required
                     type="email"
-                    placeholder="name@email.com"
+                    placeholder="Enter your email"
                     value={form.email}
                     onChange={(e) => set('email', e.target.value)}
                     className="w-full border border-[#c7c4d8] rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#1e1b4b] focus:border-[#1e1b4b] outline-none transition-all"
@@ -115,7 +115,7 @@ export default function ContactSection() {
                   <input
                     required
                     type="tel"
-                    placeholder="+92 300 0000000"
+                    placeholder="Enter your phone number"
                     value={form.phone}
                     onChange={(e) => set('phone', e.target.value)}
                     className="w-full border border-[#c7c4d8] rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#1e1b4b] focus:border-[#1e1b4b] outline-none transition-all"
@@ -145,7 +145,7 @@ export default function ContactSection() {
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Any questions or details you'd like to share…"
+                  placeholder="Enter your message"
                   value={form.message}
                   onChange={(e) => set('message', e.target.value)}
                   className="w-full border border-[#c7c4d8] rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#1e1b4b] focus:border-[#1e1b4b] outline-none transition-all resize-none"

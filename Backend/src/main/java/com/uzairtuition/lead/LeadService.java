@@ -1,5 +1,7 @@
 package com.uzairtuition.lead;
 
+import com.uzairtuition.notification.NotificationService;
+import com.uzairtuition.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,8 @@ public class LeadService {
     private static final Set<String> VALID_STATUSES = Set.of("NEW", "CONTACTED", "ENROLLED", "CLOSED");
 
     private final LeadRepository leadRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public LeadResponse submitLead(LeadRequest req) {
         Lead lead = Lead.builder()
@@ -27,7 +31,18 @@ public class LeadService {
                 .message(req.message())
                 .status("NEW")
                 .build();
-        return LeadResponse.from(leadRepository.save(lead));
+        LeadResponse response = LeadResponse.from(leadRepository.save(lead));
+
+        userRepository.findByRoleName("ADMIN")
+                .forEach(admin -> notificationService.createForUser(
+                        admin, "NEW_LEAD",
+                        "New Enquiry Received",
+                        lead.getFullName() + " enquired about "
+                                + (lead.getInterestedCourse() != null ? lead.getInterestedCourse() : "a course") + ".",
+                        lead.getId()
+                ));
+
+        return response;
     }
 
     public List<LeadResponse> getLeads(String status) {

@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import api from '../lib/api';
 import Navbar from '../components/landing/Navbar';
 import Hero from '../components/landing/Hero';
 import WhyChooseUs from '../components/landing/WhyChooseUs';
@@ -8,6 +10,10 @@ import ContactSection from '../components/landing/ContactSection';
 import Footer from '../components/landing/Footer';
 
 export default function LandingPage() {
+  useEffect(() => {
+    api.post('/public/track', { page: window.location.pathname, referrer: document.referrer || null }).catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen">
       <Navbar />
