@@ -44,13 +44,13 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <Link
             to="/login"
-            className="px-4 py-1.5 border border-[#1e1b4b] text-[#1e1b4b] rounded-full text-sm font-medium hover:bg-[#1e1b4b] hover:text-white transition-all"
+            className="hidden md:inline-flex px-4 py-1.5 border border-[#1e1b4b] text-[#1e1b4b] rounded-full text-sm font-medium hover:bg-[#1e1b4b] hover:text-white transition-all"
           >
             Login
           </Link>
           <Link
             to="/register"
-            className="px-4 py-1.5 bg-[#1e1b4b] text-white rounded-full text-sm font-medium hover:opacity-90 transition-all shadow-md"
+            className="hidden md:inline-flex px-4 py-1.5 bg-[#1e1b4b] text-white rounded-full text-sm font-medium hover:opacity-90 transition-all shadow-md"
           >
             Get Started
           </Link>
