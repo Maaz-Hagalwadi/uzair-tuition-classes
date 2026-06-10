@@ -50,7 +50,7 @@ export default function Navbar() {
           </Link>
           <Link
             to="/register"
-            className="hidden md:inline-flex px-4 py-1.5 bg-[#1e1b4b] text-white rounded-full text-sm font-medium hover:opacity-90 transition-all shadow-md"
+            className="inline-flex px-4 py-1.5 bg-[#1e1b4b] text-white rounded-full text-sm font-medium hover:opacity-90 transition-all shadow-md"
           >
             Get Started
           </Link>
