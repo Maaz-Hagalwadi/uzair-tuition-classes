@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import AuthLeftPanel from '../components/AuthLeftPanel';
-import Logo from '../components/Logo';
+import Logo, { LogoMark } from '../components/Logo';
 
 type Role = 'STUDENT' | 'TEACHER';
 
@@ -111,6 +111,7 @@ export default function RegisterPage() {
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Touched>({});
@@ -166,6 +167,18 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  if (googleLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#faf8ff] gap-6">
+        <div className="relative flex items-center justify-center">
+          <div className="w-20 h-20 rounded-2xl border-4 border-[#e4e2e6] border-t-[#070235] animate-spin absolute" />
+          <LogoMark size={44} />
+        </div>
+        <p className="text-sm text-[#505f76] font-medium">Redirecting to Google…</p>
+      </div>
+    );
+  }
 
   if (success) {
     return (
@@ -235,7 +248,7 @@ export default function RegisterPage() {
           <div className="mb-6">
             <button
               type="button"
-              onClick={() => { window.location.href = '/oauth2/authorization/google'; }}
+              onClick={() => { setGoogleLoading(true); window.location.href = '/oauth2/authorization/google'; }}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#c8c5d0] rounded-xl bg-white hover:bg-[#f2f3ff] transition-all duration-200 text-sm text-[#070235]"
             >
               <GoogleIcon />

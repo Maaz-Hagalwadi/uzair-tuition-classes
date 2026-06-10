@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuthStore } from '../stores/authStore';
 import AuthLeftPanel from '../components/AuthLeftPanel';
-import Logo from '../components/Logo';
+import Logo, { LogoMark } from '../components/Logo';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,6 +51,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError]   = useState('');
   const [loading, setLoading]   = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors]     = useState<{ email?: string; password?: string }>({});
   const [touched, setTouched]   = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
 
@@ -90,6 +91,18 @@ export default function LoginPage() {
     }
   };
 
+  if (googleLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#faf8ff] gap-6">
+        <div className="relative flex items-center justify-center">
+          <div className="w-20 h-20 rounded-2xl border-4 border-[#e4e2e6] border-t-[#070235] animate-spin absolute" />
+          <LogoMark size={44} />
+        </div>
+        <p className="text-sm text-[#505f76] font-medium">Redirecting to Google…</p>
+      </div>
+    );
+  }
+
   return (
     <main className="flex w-full h-screen overflow-hidden">
       <AuthLeftPanel />
@@ -119,7 +132,7 @@ export default function LoginPage() {
           {/* Google */}
           <div className="mb-6">
             <button type="button"
-              onClick={() => { window.location.href = '/oauth2/authorization/google'; }}
+              onClick={() => { setGoogleLoading(true); window.location.href = '/oauth2/authorization/google'; }}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#c8c5d0] rounded-xl bg-white hover:bg-[#f2f3ff] transition-all duration-200 text-sm text-[#070235]">
               <GoogleIcon />
               <span className="font-medium">Continue with Google</span>
