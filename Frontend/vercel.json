@@ -3,6 +3,6 @@
     { "source": "/api/:path*",                      "destination": "https://uzair-tuition-classes.onrender.com/api/:path*" },
     { "source": "/oauth2/authorization/:path*",      "destination": "https://uzair-tuition-classes.onrender.com/oauth2/authorization/:path*" },
     { "source": "/login/oauth2/code/:path*",        "destination": "https://uzair-tuition-classes.onrender.com/login/oauth2/code/:path*" },
-    { "source": "/((?!api|oauth2|login).*)",        "destination": "/index.html" }
+    { "source": "/((?!api|oauth2/authorization|login/oauth2).*)", "destination": "/index.html" }
   ]
 }
