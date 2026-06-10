@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { ADMIN_NAV } from '../lib/adminNav';
 export { ADMIN_NAV };
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
+import { BATCH_STATUS_META } from '../lib/statusMeta';
 
 type StatusFilter = 'ALL' | 'UPCOMING' | 'ACTIVE' | 'COMPLETED';
 
@@ -42,12 +43,6 @@ const EMPTY_FORM: BatchForm = {
   timings: '', maxStudents: '30', status: 'UPCOMING',
 };
 
-const STATUS_META: Record<string, { bg: string; text: string; dot: string }> = {
-  UPCOMING:  { bg: 'bg-[#d0e1fb]', text: 'text-[#0b1c30]', dot: 'bg-[#1565c0]' },
-  ACTIVE:    { bg: 'bg-[#d8f4e4]', text: 'text-[#0a3320]', dot: 'bg-[#1a6b3a]' },
-  COMPLETED: { bg: 'bg-[#e4e2e6]', text: 'text-[#47464f]', dot: 'bg-[#787680]' },
-};
-
 const TABS: { key: StatusFilter; label: string }[] = [
   { key: 'ALL', label: 'All' },
   { key: 'UPCOMING', label: 'Upcoming' },
@@ -56,7 +51,7 @@ const TABS: { key: StatusFilter; label: string }[] = [
 ];
 
 function StatusBadge({ status }: { status: string }) {
-  const m = STATUS_META[status] ?? STATUS_META.COMPLETED;
+  const m = BATCH_STATUS_META[status] ?? BATCH_STATUS_META.COMPLETED;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${m.bg} ${m.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} />
@@ -194,12 +189,12 @@ export default function AdminBatchesPage() {
 
   const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ['courses-list'],
-    queryFn: async () => { const { data } = await api.get('/admin/courses'); return data; },
+    queryFn: apiGet('/admin/courses'),
   });
 
   const { data: teachers = [] } = useQuery<Teacher[]>({
     queryKey: ['teachers-list'],
-    queryFn: async () => { const { data } = await api.get('/admin/users?role=TEACHER'); return data; },
+    queryFn: apiGet('/admin/users?role=TEACHER'),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin-batches'] });

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { ADMIN_NAV } from '../lib/adminNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
+import { LEAD_STATUS_META } from '../lib/statusMeta';
 
 type StatusFilter = 'ALL' | 'NEW' | 'CONTACTED' | 'ENROLLED' | 'CLOSED';
 
@@ -24,13 +25,6 @@ interface Counts {
   CLOSED: number;
 }
 
-const STATUS_META: Record<string, { label: string; dot: string; text: string; bg: string }> = {
-  NEW:       { label: 'New',       dot: 'bg-[#e8740c]', text: 'text-[#6b3800]', bg: 'bg-[#ffddb3]' },
-  CONTACTED: { label: 'Contacted', dot: 'bg-[#1565c0]', text: 'text-[#0d2a5c]', bg: 'bg-[#d0e1fb]' },
-  ENROLLED:  { label: 'Enrolled',  dot: 'bg-[#1a6b3a]', text: 'text-[#0a3320]', bg: 'bg-[#d8f4e4]' },
-  CLOSED:    { label: 'Closed',    dot: 'bg-[#787680]', text: 'text-[#47464f]', bg: 'bg-[#e4e2e6]' },
-};
-
 const TABS: { key: StatusFilter; label: string }[] = [
   { key: 'ALL', label: 'All' },
   { key: 'NEW', label: 'New' },
@@ -42,7 +36,7 @@ const TABS: { key: StatusFilter; label: string }[] = [
 const STATUSES: StatusFilter[] = ['NEW', 'CONTACTED', 'ENROLLED', 'CLOSED'];
 
 function StatusBadge({ status }: { status: string }) {
-  const meta = STATUS_META[status] ?? STATUS_META.CLOSED;
+  const meta = LEAD_STATUS_META[status] ?? LEAD_STATUS_META.CLOSED;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${meta.bg} ${meta.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
@@ -77,10 +71,7 @@ export default function AdminLeadsPage() {
 
   const { data: counts } = useQuery<Counts>({
     queryKey: ['admin-lead-counts'],
-    queryFn: async () => {
-      const { data } = await api.get('/admin/leads/counts');
-      return data;
-    },
+    queryFn: apiGet('/admin/leads/counts'),
   });
 
   const statusMutation = useMutation({
@@ -134,7 +125,7 @@ export default function AdminLeadsPage() {
                   {t.label}
                   {count !== null && count > 0 && (
                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none ${
-                      tab === t.key ? 'bg-white/20 text-white' : STATUS_META[t.key]?.bg + ' ' + STATUS_META[t.key]?.text
+                      tab === t.key ? 'bg-white/20 text-white' : LEAD_STATUS_META[t.key]?.bg + ' ' + LEAD_STATUS_META[t.key]?.text
                     }`}>
                       {count}
                     </span>
@@ -218,7 +209,7 @@ export default function AdminLeadsPage() {
                           className="text-xs border border-[#c8c5d0] rounded-lg px-2 py-1.5 bg-white text-[#131b2e] focus:outline-none focus:border-[#070235] transition-all disabled:opacity-50 cursor-pointer"
                         >
                           {STATUSES.map((s) => (
-                            <option key={s} value={s}>{STATUS_META[s].label}</option>
+                            <option key={s} value={s}>{LEAD_STATUS_META[s].label}</option>
                           ))}
                         </select>
                         {deleteConfirm === lead.id ? (
@@ -310,7 +301,7 @@ export default function AdminLeadsPage() {
                     className="text-[10px] border border-[#c8c5d0] rounded-lg px-2 py-1 bg-white text-[#131b2e] focus:outline-none focus:border-[#070235] disabled:opacity-50 cursor-pointer"
                   >
                     {STATUSES.map((s) => (
-                      <option key={s} value={s}>{STATUS_META[s].label}</option>
+                      <option key={s} value={s}>{LEAD_STATUS_META[s].label}</option>
                     ))}
                   </select>
 

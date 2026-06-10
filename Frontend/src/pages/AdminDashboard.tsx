@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { ADMIN_NAV } from '../lib/adminNav';
 import { useAuthStore } from '../stores/authStore';
-import api from '../lib/api';
+import { apiGet } from '../lib/api';
 
 interface UserRecord { id: number; roles: string[]; active: boolean; }
 interface Course { id: number; status: string; }
@@ -74,23 +74,23 @@ export default function AdminDashboard() {
 
   const { data: users = [] } = useQuery<UserRecord[]>({
     queryKey: ['admin-users-all'],
-    queryFn: async () => { const { data } = await api.get('/admin/users'); return data; },
+    queryFn: apiGet('/admin/users'),
   });
   const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ['admin-courses'],
-    queryFn: async () => { const { data } = await api.get('/admin/courses'); return data; },
+    queryFn: apiGet('/admin/courses'),
   });
   const { data: batches = [] } = useQuery<Batch[]>({
     queryKey: ['admin-batches'],
-    queryFn: async () => { const { data } = await api.get('/admin/batches'); return data; },
+    queryFn: apiGet('/admin/batches'),
   });
   const { data: leadCounts } = useQuery<LeadCounts>({
     queryKey: ['admin-lead-counts'],
-    queryFn: async () => { const { data } = await api.get('/admin/leads/counts'); return data; },
+    queryFn: apiGet('/admin/leads/counts'),
   });
   const { data: recentLeads = [] } = useQuery<Lead[]>({
     queryKey: ['admin-leads-recent'],
-    queryFn: async () => { const { data } = await api.get('/admin/leads'); return data; },
+    queryFn: apiGet('/admin/leads'),
   });
 
   const studentCount = users.filter(u => u.roles.includes('STUDENT')).length;

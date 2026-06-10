@@ -8,6 +8,7 @@ import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
 import com.uzairtuition.util.EmailService;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -29,9 +30,8 @@ public class EnrollmentService {
 
     @Transactional
     public EnrollmentRequestResponse requestEnrollment(Long batchId, String studentEmail) {
-        User student = findStudentByEmail(studentEmail);
-        Batch batch = batchRepository.findById(batchId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Batch not found."));
+        User student = EntityFinder.findOrThrow(userRepository.findByEmail(studentEmail), "User");
+        Batch batch = EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
 
         if (batchStudentRepository.existsByBatchIdAndStudentId(batchId, student.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Already enrolled in this batch.");
@@ -65,7 +65,7 @@ public class EnrollmentService {
     }
 
     public List<EnrollmentRequestResponse> getStudentRequests(String studentEmail) {
-        User student = findStudentByEmail(studentEmail);
+        User student = EntityFinder.findOrThrow(userRepository.findByEmail(studentEmail), "User");
         return requestRepository.findByStudentIdOrderByCreatedAtDesc(student.getId()).stream()
                 .map(EnrollmentRequestResponse::from)
                 .toList();
@@ -84,7 +84,7 @@ public class EnrollmentService {
 
     @Transactional
     public EnrollmentRequestResponse approve(Long requestId) {
-        EnrollmentRequest req = findOrThrow(requestId);
+        EnrollmentRequest req = EntityFinder.findOrThrow(requestRepository.findById(requestId), "Request");
         if (!req.getStatus().equals("PENDING")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request is not pending.");
         }
@@ -113,7 +113,7 @@ public class EnrollmentService {
 
     @Transactional
     public EnrollmentRequestResponse reject(Long requestId, String note) {
-        EnrollmentRequest req = findOrThrow(requestId);
+        EnrollmentRequest req = EntityFinder.findOrThrow(requestRepository.findById(requestId), "Request");
         if (!req.getStatus().equals("PENDING")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request is not pending.");
         }
@@ -130,15 +130,5 @@ public class EnrollmentService {
         emailService.sendEnrollmentRejectedEmail(
                 req.getStudent().getEmail(), req.getStudent().getFirstName(), req.getBatch().getName(), note);
         return result;
-    }
-
-    private EnrollmentRequest findOrThrow(Long id) {
-        return requestRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found."));
-    }
-
-    private User findStudentByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
     }
 }

@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { TEACHER_NAV } from '../lib/teacherNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
+import { QUIZ_STATUS_META } from '../lib/statusMeta';
 
 interface QuizOption { id: number; optionText: string; isCorrect: boolean | null; orderIndex: number; }
 interface QuizQuestion { id: number; questionText: string; questionType: string; marks: number; orderIndex: number; options: QuizOption[]; }
@@ -14,12 +15,6 @@ interface QuizSummary {
 interface QuizDetail { summary: QuizSummary; questions: QuizQuestion[]; }
 
 interface OptionDraft { text: string; isCorrect: boolean; }
-
-const STATUS_META: Record<string, { label: string; bg: string; text: string }> = {
-  DRAFT:     { label: 'Draft',     bg: '#f3f4f6', text: '#6b7280' },
-  PUBLISHED: { label: 'Published', bg: '#f0fdf4', text: '#16a34a' },
-  CLOSED:    { label: 'Closed',    bg: '#fef2f2', text: '#dc2626' },
-};
 
 // ── Add Question Modal ─────────────────────────────────────────────────────────
 function AddQuestionModal({ quizId, onClose, onAdded }: {
@@ -151,7 +146,7 @@ export default function TeacherQuizDetailPage() {
 
   const { data: detail, isLoading } = useQuery<QuizDetail>({
     queryKey: ['teacher-quiz-detail', quizId],
-    queryFn: async () => { const { data } = await api.get(`/teacher/quizzes/${quizId}`); return data; },
+    queryFn: apiGet(`/teacher/quizzes/${quizId}`),
   });
 
   const statusMutation = useMutation({
@@ -180,7 +175,7 @@ export default function TeacherQuizDetailPage() {
   }
 
   const { summary, questions } = detail;
-  const meta = STATUS_META[summary.status] ?? STATUS_META.DRAFT;
+  const meta = QUIZ_STATUS_META[summary.status] ?? QUIZ_STATUS_META.DRAFT;
 
   const nextStatus = summary.status === 'DRAFT' ? 'PUBLISHED'
     : summary.status === 'PUBLISHED' ? 'CLOSED'

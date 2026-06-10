@@ -5,6 +5,7 @@ import com.uzairtuition.batch.BatchRepository;
 import com.uzairtuition.batch.BatchStudentRepository;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -35,10 +36,8 @@ public class QuizService {
 
     @Transactional
     public QuizSummaryResponse createQuiz(QuizRequest req, String teacherEmail) {
-        Batch batch = batchRepository.findById(req.batchId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Batch not found."));
-        User teacher = userRepository.findByEmail(teacherEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher not found."));
+        Batch batch = EntityFinder.findOrThrow(batchRepository.findById(req.batchId()), "Batch");
+        User teacher = EntityFinder.findOrThrow(userRepository.findByEmail(teacherEmail), "Teacher");
         Quiz quiz = Quiz.builder()
                 .title(req.title().trim())
                 .description(req.description())
@@ -61,8 +60,7 @@ public class QuizService {
     }
 
     public QuizDetailResponse getQuizDetail(Long quizId) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz not found."));
+        Quiz quiz = EntityFinder.findOrThrow(quizRepository.findById(quizId), "Quiz");
         List<QuizQuestion> questions = quizQuestionRepository.findByQuizIdOrderByOrderIndexAsc(quizId);
         List<QuestionResponse> questionResponses = questions.stream()
                 .map(q -> {
@@ -75,8 +73,7 @@ public class QuizService {
 
     @Transactional
     public QuizSummaryResponse updateQuiz(Long id, QuizRequest req) {
-        Quiz quiz = quizRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz not found."));
+        Quiz quiz = EntityFinder.findOrThrow(quizRepository.findById(id), "Quiz");
         quiz.setTitle(req.title().trim());
         quiz.setDescription(req.description());
         quiz.setTimeLimitMinutes(req.timeLimitMinutes());
@@ -89,8 +86,7 @@ public class QuizService {
         if (!Set.of("DRAFT", "PUBLISHED", "CLOSED").contains(status)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status.");
         }
-        Quiz quiz = quizRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz not found."));
+        Quiz quiz = EntityFinder.findOrThrow(quizRepository.findById(id), "Quiz");
         quiz.setStatus(status);
         int count = quizQuestionRepository.findByQuizIdOrderByOrderIndexAsc(id).size();
         return QuizSummaryResponse.from(quizRepository.save(quiz), count);
@@ -98,15 +94,13 @@ public class QuizService {
 
     @Transactional
     public void deleteQuiz(Long id) {
-        quizRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz not found."));
+        EntityFinder.findOrThrow(quizRepository.findById(id), "Quiz");
         quizRepository.deleteById(id);
     }
 
     @Transactional
     public QuestionResponse addQuestion(Long quizId, QuestionRequest req) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz not found."));
+        Quiz quiz = EntityFinder.findOrThrow(quizRepository.findById(quizId), "Quiz");
         int nextIndex = quizQuestionRepository.findByQuizIdOrderByOrderIndexAsc(quizId).size();
         QuizQuestion q = QuizQuestion.builder()
                 .quiz(quiz)
@@ -132,8 +126,7 @@ public class QuizService {
 
     @Transactional
     public void deleteQuestion(Long questionId) {
-        QuizQuestion q = quizQuestionRepository.findById(questionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found."));
+        QuizQuestion q = EntityFinder.findOrThrow(quizQuestionRepository.findById(questionId), "Question");
         quizOptionRepository.deleteByQuestionId(questionId);
         quizQuestionRepository.delete(q);
     }
@@ -156,8 +149,7 @@ public class QuizService {
     }
 
     public QuizDetailResponse getStudentQuizDetail(Long quizId) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz not found."));
+        Quiz quiz = EntityFinder.findOrThrow(quizRepository.findById(quizId), "Quiz");
         List<QuizQuestion> questions = quizQuestionRepository.findByQuizIdOrderByOrderIndexAsc(quizId);
         List<QuestionResponse> qResponses = questions.stream()
                 .map(q -> {
@@ -170,59 +162,61 @@ public class QuizService {
 
     @Transactional
     public AttemptResponse submitAttempt(Long quizId, Long studentId, AttemptSubmitRequest req) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz not found."));
+        Quiz quiz = EntityFinder.findOrThrow(quizRepository.findById(quizId), "Quiz");
         if (!"PUBLISHED".equals(quiz.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quiz is not published.");
         }
         if (quizAttemptRepository.findByQuizIdAndStudentId(quizId, studentId).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You have already attempted this quiz.");
         }
-        User student = userRepository.findById(studentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found."));
-        QuizAttempt attempt = QuizAttempt.builder()
-                .quiz(quiz)
-                .student(student)
-                .status("IN_PROGRESS")
-                .build();
-        attempt = quizAttemptRepository.save(attempt);
-        final QuizAttempt savedAttempt = attempt;
+        User student = EntityFinder.findOrThrow(userRepository.findById(studentId), "Student");
+
+        QuizAttempt attempt = quizAttemptRepository.save(QuizAttempt.builder()
+                .quiz(quiz).student(student).status("IN_PROGRESS").build());
 
         List<QuizQuestion> questions = quizQuestionRepository.findByQuizIdOrderByOrderIndexAsc(quizId);
-        int totalMarks = questions.stream()
-                .mapToInt(q -> q.getMarks() != null ? q.getMarks() : 1)
-                .sum();
-        int score = 0;
-
-        for (AnswerRequest ans : req.answers()) {
-            QuizQuestion question = quizQuestionRepository.findById(ans.questionId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found."));
-            List<QuizOption> opts = quizOptionRepository.findByQuestionIdOrderByOrderIndexAsc(ans.questionId());
-            boolean isCorrect = opts.stream()
-                    .anyMatch(o -> o.getId().equals(ans.selectedOptionId()) && Boolean.TRUE.equals(o.getIsCorrect()));
-            if (isCorrect) {
-                score += question.getMarks() != null ? question.getMarks() : 1;
-            }
-            QuizAnswer answer = QuizAnswer.builder()
-                    .attempt(savedAttempt)
-                    .question(question)
-                    .selectedOptionIds(new Long[]{ans.selectedOptionId()})
-                    .isCorrect(isCorrect)
-                    .build();
-            quizAnswerRepository.save(answer);
-        }
+        int totalMarks = sumTotalMarks(questions);
+        int score = calculateAndPersistAnswers(attempt, req.answers());
 
         attempt.setScore(score);
         attempt.setTotalMarks(totalMarks);
         attempt.setStatus("SUBMITTED");
         attempt.setSubmittedAt(LocalDateTime.now());
-        attempt = quizAttemptRepository.save(attempt);
-        return AttemptResponse.from(attempt);
+        return AttemptResponse.from(quizAttemptRepository.save(attempt));
     }
 
     public List<AttemptResponse> getStudentAttempts(Long studentId) {
         return quizAttemptRepository.findByStudentIdOrderByStartedAtDesc(studentId).stream()
                 .map(AttemptResponse::from)
                 .toList();
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    private int sumTotalMarks(List<QuizQuestion> questions) {
+        return questions.stream().mapToInt(q -> q.getMarks() != null ? q.getMarks() : 1).sum();
+    }
+
+    private int calculateAndPersistAnswers(QuizAttempt attempt, List<AnswerRequest> answers) {
+        int score = 0;
+        for (AnswerRequest ans : answers) {
+            QuizQuestion question = EntityFinder.findOrThrow(
+                    quizQuestionRepository.findById(ans.questionId()), "Question");
+            List<QuizOption> opts = quizOptionRepository.findByQuestionIdOrderByOrderIndexAsc(ans.questionId());
+            boolean isCorrect = opts.stream()
+                    .anyMatch(o -> o.getId().equals(ans.selectedOptionId()) && Boolean.TRUE.equals(o.getIsCorrect()));
+            if (isCorrect) {
+                score += question.getMarks() != null ? question.getMarks() : 1;
+            }
+            quizAnswerRepository.save(QuizAnswer.builder()
+                    .attempt(attempt)
+                    .question(question)
+                    .selectedOptionIds(new Long[]{ans.selectedOptionId()})
+                    .isCorrect(isCorrect)
+                    .build());
+        }
+        return score;
     }
 }

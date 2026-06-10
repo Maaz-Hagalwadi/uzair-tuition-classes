@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { useAuthStore } from '../stores/authStore';
 import { TEACHER_NAV } from '../lib/teacherNav';
-import api from '../lib/api';
+import { apiGet } from '../lib/api';
 
 interface Batch {
   id: number;
@@ -45,12 +45,12 @@ export default function TeacherDashboard() {
 
   const { data: batches = [] } = useQuery<Batch[]>({
     queryKey: ['teacher-batches'],
-    queryFn: async () => { const { data } = await api.get('/teacher/batches'); return data; },
+    queryFn: apiGet('/teacher/batches'),
   });
 
   const { data: upcomingSessions = [] } = useQuery<Session[]>({
     queryKey: ['teacher-upcoming-sessions'],
-    queryFn: async () => { const { data } = await api.get('/teacher/sessions/upcoming'); return data; },
+    queryFn: apiGet('/teacher/sessions/upcoming'),
   });
 
   const activeBatches = batches.filter(b => b.status === 'ACTIVE' || b.status === 'UPCOMING').length;

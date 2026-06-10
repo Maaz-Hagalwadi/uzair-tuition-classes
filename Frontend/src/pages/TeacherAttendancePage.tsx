@@ -5,7 +5,7 @@ import DashboardShell from '../components/DashboardShell';
 import { TEACHER_NAV } from '../lib/teacherNav';
 import { ADMIN_NAV } from '../lib/adminNav';
 import { useAuthStore } from '../stores/authStore';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
 
 interface Session {
   id: number;
@@ -80,17 +80,17 @@ export default function TeacherAttendancePage() {
 
   const { data: sessions = [] } = useQuery<Session[]>({
     queryKey: ['batch-sessions', bId],
-    queryFn: async () => { const { data } = await api.get(`/admin/batches/${bId}/sessions`); return data; },
+    queryFn: apiGet(`/admin/batches/${bId}/sessions`),
   });
 
   const { data: students = [] } = useQuery<Student[]>({
     queryKey: ['teacher-batch-students', bId],
-    queryFn: async () => { const { data } = await api.get(`/teacher/batches/${bId}/students`); return data; },
+    queryFn: apiGet(`/teacher/batches/${bId}/students`),
   });
 
   const { data: existing = [] } = useQuery<AttendanceRecord[]>({
     queryKey: ['session-attendance', sId],
-    queryFn: async () => { const { data } = await api.get(`/teacher/sessions/${sId}/attendance`); return data; },
+    queryFn: apiGet(`/teacher/sessions/${sId}/attendance`),
   });
 
   useEffect(() => {

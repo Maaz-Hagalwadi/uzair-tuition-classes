@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { STUDENT_NAV } from '../lib/studentNav';
-import api from '../lib/api';
+import { apiGet } from '../lib/api';
 
 interface Announcement {
   id: number;
@@ -30,7 +30,7 @@ function timeAgo(d: string) {
 export default function StudentAnnouncementsPage() {
   const { data: announcements = [], isLoading } = useQuery<Announcement[]>({
     queryKey: ['student-announcements'],
-    queryFn: async () => { const { data } = await api.get('/student/announcements'); return data; },
+    queryFn: apiGet('/student/announcements'),
   });
 
   return (

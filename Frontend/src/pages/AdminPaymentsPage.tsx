@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { ADMIN_NAV } from '../lib/adminNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
+import { PAYMENT_STATUS_META } from '../lib/statusMeta';
 
 type StatusFilter = 'ALL' | 'PENDING' | 'PAID' | 'OVERDUE' | 'WAIVED';
 
@@ -22,12 +23,6 @@ interface Payment {
 interface User { id: number; firstName: string; lastName: string; email: string; roles: string[]; }
 interface Batch { id: number; name: string; courseName: string; }
 
-const STATUS_META: Record<string, { label: string; bg: string; text: string }> = {
-  PENDING: { label: 'Pending', bg: '#fff7ed', text: '#c2410c' },
-  PAID:    { label: 'Paid',    bg: '#f0fdf4', text: '#16a34a' },
-  OVERDUE: { label: 'Overdue', bg: '#fef2f2', text: '#dc2626' },
-  WAIVED:  { label: 'Waived',  bg: '#f3f4f6', text: '#6b7280' },
-};
 const VALID_STATUSES = ['PENDING', 'PAID', 'OVERDUE', 'WAIVED'];
 
 function fmtDate(d: string | null) {
@@ -51,11 +46,11 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['admin-users'],
-    queryFn: async () => { const { data } = await api.get('/admin/users'); return data; },
+    queryFn: apiGet('/admin/users'),
   });
   const { data: batches = [] } = useQuery<Batch[]>({
     queryKey: ['admin-batches'],
-    queryFn: async () => { const { data } = await api.get('/admin/batches'); return data; },
+    queryFn: apiGet('/admin/batches'),
   });
 
   const students = users.filter(u => u.roles.includes('STUDENT'));
@@ -268,7 +263,7 @@ export default function AdminPaymentsPage() {
             {/* Mobile cards */}
             <div className="sm:hidden space-y-3">
               {filtered.map(p => {
-                const meta = STATUS_META[p.status] ?? STATUS_META.PENDING;
+                const meta = PAYMENT_STATUS_META[p.status] ?? PAYMENT_STATUS_META.PENDING;
                 return (
                   <div key={p.id} className="bg-white rounded-xl border border-[#e4e2e6] p-4 space-y-3">
                     {/* Student + batch */}
@@ -317,7 +312,7 @@ export default function AdminPaymentsPage() {
                 </thead>
                 <tbody className="divide-y divide-[#f3f4f6]">
                   {filtered.map(p => {
-                    const meta = STATUS_META[p.status] ?? STATUS_META.PENDING;
+                    const meta = PAYMENT_STATUS_META[p.status] ?? PAYMENT_STATUS_META.PENDING;
                     return (
                       <tr key={p.id} className="hover:bg-[#fafafa] transition-colors">
                         <td className="px-5 py-3">

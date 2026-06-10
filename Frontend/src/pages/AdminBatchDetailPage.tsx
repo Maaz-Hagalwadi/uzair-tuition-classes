@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { ADMIN_NAV } from '../lib/adminNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
+import { BATCH_STATUS_META } from '../lib/statusMeta';
 
 type ActiveTab = 'students' | 'sessions';
 
@@ -184,12 +185,6 @@ function SessionModal({
   );
 }
 
-const STATUS_META: Record<string, { bg: string; text: string; dot: string }> = {
-  UPCOMING:  { bg: 'bg-[#d0e1fb]', text: 'text-[#0b1c30]', dot: 'bg-[#1565c0]' },
-  ACTIVE:    { bg: 'bg-[#d8f4e4]', text: 'text-[#0a3320]', dot: 'bg-[#1a6b3a]' },
-  COMPLETED: { bg: 'bg-[#e4e2e6]', text: 'text-[#47464f]', dot: 'bg-[#787680]' },
-};
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
@@ -220,29 +215,29 @@ export default function AdminBatchDetailPage() {
 
   const { data: batch, isLoading: batchLoading } = useQuery<Batch>({
     queryKey: ['admin-batch', batchId],
-    queryFn: async () => { const { data } = await api.get(`/admin/batches/${batchId}`); return data; },
+    queryFn: apiGet(`/admin/batches/${batchId}`),
     enabled: !!batchId,
   });
 
   const { data: students = [], isLoading: studentsLoading } = useQuery<Student[]>({
     queryKey: ['admin-batch-students', batchId],
-    queryFn: async () => { const { data } = await api.get(`/admin/batches/${batchId}/students`); return data; },
+    queryFn: apiGet(`/admin/batches/${batchId}/students`),
     enabled: !!batchId,
   });
 
   const { data: allStudents = [] } = useQuery<AllStudent[]>({
     queryKey: ['students-list'],
-    queryFn: async () => { const { data } = await api.get('/admin/users?role=STUDENT'); return data; },
+    queryFn: apiGet('/admin/users?role=STUDENT'),
   });
 
   const { data: teachers = [] } = useQuery<AllStudent[]>({
     queryKey: ['teachers-list'],
-    queryFn: async () => { const { data } = await api.get('/admin/users?role=TEACHER'); return data; },
+    queryFn: apiGet('/admin/users?role=TEACHER'),
   });
 
   const { data: sessions = [], isLoading: sessionsLoading } = useQuery<Session[]>({
     queryKey: ['admin-batch-sessions', batchId],
-    queryFn: async () => { const { data } = await api.get(`/admin/batches/${batchId}/sessions`); return data; },
+    queryFn: apiGet(`/admin/batches/${batchId}/sessions`),
     enabled: !!batchId,
   });
 
@@ -358,7 +353,7 @@ export default function AdminBatchDetailPage() {
     );
   }
 
-  const statusMeta = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
+  const statusMeta = BATCH_STATUS_META[batch.status] ?? BATCH_STATUS_META.COMPLETED;
 
   return (
     <DashboardShell navItems={ADMIN_NAV}>

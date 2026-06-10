@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { TEACHER_NAV } from '../lib/teacherNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
+import { BATCH_STATUS_INLINE_META } from '../lib/statusMeta';
 
 type ActiveTab = 'students' | 'sessions' | 'announcements';
 
@@ -46,12 +47,6 @@ interface SessionForm {
   meetingUrl: string;
   meetingPlatform: string;
 }
-
-const STATUS_META: Record<string, { bg: string; text: string }> = {
-  UPCOMING:  { bg: '#eff6ff', text: '#1d4ed8' },
-  ACTIVE:    { bg: '#f0fdf4', text: '#15803d' },
-  COMPLETED: { bg: '#f9fafb', text: '#6b7280' },
-};
 
 const PLATFORM_META: Record<string, { label: string; bg: string; text: string }> = {
   GOOGLE_MEET:      { label: 'Google Meet', bg: '#ecfdf5', text: '#059669' },
@@ -216,7 +211,7 @@ function AnnouncementsTab({ batchId }: { batchId: number }) {
 
   const { data: announcements = [], isLoading } = useQuery<Announcement[]>({
     queryKey: ['batch-announcements', batchId],
-    queryFn: async () => { const { data } = await api.get(`/teacher/batches/${batchId}/announcements`); return data; },
+    queryFn: apiGet(`/teacher/batches/${batchId}/announcements`),
   });
 
   const deleteMutation = useMutation({
@@ -312,19 +307,19 @@ export default function TeacherBatchDetailPage() {
 
   const { data: allBatches = [], isLoading: batchLoading } = useQuery<Batch[]>({
     queryKey: ['teacher-batches'],
-    queryFn: async () => { const { data } = await api.get('/teacher/batches'); return data; },
+    queryFn: apiGet('/teacher/batches'),
   });
   const batch = allBatches.find(b => b.id === batchId);
 
   const { data: students = [] } = useQuery<Student[]>({
     queryKey: ['teacher-batch-students', batchId],
-    queryFn: async () => { const { data } = await api.get(`/teacher/batches/${batchId}/students`); return data; },
+    queryFn: apiGet(`/teacher/batches/${batchId}/students`),
     enabled: !!batchId,
   });
 
   const { data: sessions = [] } = useQuery<Session[]>({
     queryKey: ['teacher-batch-sessions', batchId],
-    queryFn: async () => { const { data } = await api.get(`/admin/batches/${batchId}/sessions`); return data; },
+    queryFn: apiGet(`/admin/batches/${batchId}/sessions`),
     enabled: !!batchId,
   });
 
@@ -350,7 +345,7 @@ export default function TeacherBatchDetailPage() {
     );
   }
 
-  const statusMeta = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
+  const statusMeta = BATCH_STATUS_INLINE_META[batch.status] ?? BATCH_STATUS_INLINE_META.COMPLETED;
 
   return (
     <DashboardShell navItems={TEACHER_NAV}>

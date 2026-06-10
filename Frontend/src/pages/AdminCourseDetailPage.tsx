@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { ADMIN_NAV } from '../lib/adminNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
+import { COURSE_STATUS_META } from '../lib/statusMeta';
 
 interface CourseEditForm {
   title: string;
@@ -36,12 +37,6 @@ interface Material {
 }
 
 const FILE_TYPES = ['PDF', 'Video', 'Document', 'Slides', 'Link', 'Other'];
-
-const STATUS_META: Record<string, { bg: string; text: string; dot: string }> = {
-  ACTIVE:   { bg: 'bg-[#d8f4e4]', text: 'text-[#0a3320]', dot: 'bg-[#1a6b3a]' },
-  DRAFT:    { bg: 'bg-[#fef9c3]', text: 'text-[#713f12]', dot: 'bg-[#ca8a04]' },
-  INACTIVE: { bg: 'bg-[#e4e2e6]', text: 'text-[#47464f]', dot: 'bg-[#787680]' },
-};
 
 function fileTypeIcon(type: string | null) {
   const t = (type ?? '').toLowerCase();
@@ -81,13 +76,13 @@ export default function AdminCourseDetailPage() {
 
   const { data: course, isLoading: courseLoading } = useQuery<Course>({
     queryKey: ['admin-course', courseId],
-    queryFn: async () => { const { data } = await api.get(`/admin/courses/${courseId}`); return data; },
+    queryFn: apiGet(`/admin/courses/${courseId}`),
     enabled: !!courseId,
   });
 
   const { data: materials = [], isLoading: matsLoading } = useQuery<Material[]>({
     queryKey: ['admin-course-materials', courseId],
-    queryFn: async () => { const { data } = await api.get(`/admin/courses/${courseId}/materials`); return data; },
+    queryFn: apiGet(`/admin/courses/${courseId}/materials`),
     enabled: !!courseId,
   });
 
@@ -150,7 +145,7 @@ export default function AdminCourseDetailPage() {
     );
   }
 
-  const statusMeta = STATUS_META[course.status] ?? STATUS_META.INACTIVE;
+  const statusMeta = COURSE_STATUS_META[course.status] ?? COURSE_STATUS_META.INACTIVE;
 
   return (
     <DashboardShell navItems={ADMIN_NAV}>

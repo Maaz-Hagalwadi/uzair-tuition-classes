@@ -6,6 +6,7 @@ import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
 import com.uzairtuition.util.EmailService;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -44,16 +45,14 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse create(PaymentRequest req) {
-        User student = userRepository.findById(req.studentId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found."));
+        User student = EntityFinder.findOrThrow(userRepository.findById(req.studentId()), "Student");
 
         boolean isStudent = student.getRoles().stream().anyMatch(r -> r.getName().equals("STUDENT"));
         if (!isStudent) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a student.");
         }
 
-        Batch batch = batchRepository.findById(req.batchId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Batch not found."));
+        Batch batch = EntityFinder.findOrThrow(batchRepository.findById(req.batchId()), "Batch");
 
         Payment payment = Payment.builder()
                 .student(student)
@@ -74,8 +73,7 @@ public class PaymentService {
                     "Invalid status. Must be one of: " + VALID_STATUSES);
         }
 
-        Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found."));
+        Payment payment = EntityFinder.findOrThrow(paymentRepository.findById(id), "Payment");
 
         String newStatus = status.toUpperCase();
         payment.setStatus(newStatus);

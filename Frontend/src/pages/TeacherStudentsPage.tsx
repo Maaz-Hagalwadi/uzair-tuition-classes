@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { TEACHER_NAV } from '../lib/teacherNav';
-import api from '../lib/api';
+import { apiGet } from '../lib/api';
 
 interface Batch {
   id: number;
@@ -40,7 +40,7 @@ export default function TeacherStudentsPage() {
 
   const { data: batches = [], isLoading: batchesLoading } = useQuery<Batch[]>({
     queryKey: ['teacher-batches'],
-    queryFn: async () => { const { data } = await api.get('/teacher/batches'); return data; },
+    queryFn: apiGet('/teacher/batches'),
   });
 
   // Fetch students for every batch in parallel once batches are loaded
@@ -49,7 +49,7 @@ export default function TeacherStudentsPage() {
     queryFn: async () => {
       const results = await Promise.all(
         batches.map(async b => {
-          const { data } = await api.get<Student[]>(`/teacher/batches/${b.id}/students`);
+          const data = await apiGet<Student[]>(`/teacher/batches/${b.id}/students`)();
           return data.map(s => ({
             ...s,
             batchId: b.id,

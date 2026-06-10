@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { STUDENT_NAV } from '../lib/studentNav';
-import api from '../lib/api';
+import { apiGet } from '../lib/api';
+import { ATTENDANCE_STATUS_META } from '../lib/statusMeta';
 
 interface AttendanceSummary {
   batchId: number;
@@ -26,12 +27,6 @@ interface AttendanceRecord {
   markedAt: string | null;
 }
 
-const STATUS_META = {
-  PRESENT: { label: 'Present', color: '#16a34a', dot: '#22c55e', bg: '#f0fdf4' },
-  LATE:    { label: 'Late',    color: '#d97706', dot: '#f59e0b', bg: '#fffbeb' },
-  ABSENT:  { label: 'Absent',  color: '#dc2626', dot: '#ef4444', bg: '#fef2f2' },
-} as const;
-
 const BATCH_GRADIENTS = [
   'linear-gradient(135deg,#4f46e5,#6366f1)',
   'linear-gradient(135deg,#0891b2,#06b6d4)',
@@ -54,12 +49,12 @@ function fmtDate(d: string) {
 export default function StudentAttendancePage() {
   const { data: summaries = [], isLoading: sl } = useQuery<AttendanceSummary[]>({
     queryKey: ['student-attendance-summary'],
-    queryFn: async () => { const { data } = await api.get('/student/attendance/summary'); return data; },
+    queryFn: apiGet('/student/attendance/summary'),
   });
 
   const { data: records = [], isLoading: rl } = useQuery<AttendanceRecord[]>({
     queryKey: ['student-attendance'],
-    queryFn: async () => { const { data } = await api.get('/student/attendance'); return data; },
+    queryFn: apiGet('/student/attendance'),
   });
 
   const isLoading = sl || rl;
@@ -181,7 +176,7 @@ export default function StudentAttendancePage() {
                         { key: 'LATE',    val: s.late     },
                         { key: 'ABSENT',  val: s.absent   },
                       ] as const).map(({ key, val }) => {
-                        const m = STATUS_META[key];
+                        const m = ATTENDANCE_STATUS_META[key];
                         return (
                           <span key={key} className="inline-flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: m.color }}>
                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: m.dot }} />
@@ -198,7 +193,7 @@ export default function StudentAttendancePage() {
                       <div className="border-t border-[#f1f5f9]" />
                       <div className="divide-y divide-[#f8fafc]">
                         {batchRecs.map(r => {
-                          const meta = STATUS_META[r.status as keyof typeof STATUS_META] ?? STATUS_META.ABSENT;
+                          const meta = ATTENDANCE_STATUS_META[r.status as keyof typeof ATTENDANCE_STATUS_META] ?? ATTENDANCE_STATUS_META.ABSENT;
                           return (
                             <div key={r.id} className="flex items-center gap-3 px-5 py-2.5 hover:bg-[#fafbff] transition-colors">
                               <div className="w-[68px] shrink-0 text-[11px] text-[#94a3b8]">{fmtDate(r.sessionDate)}</div>

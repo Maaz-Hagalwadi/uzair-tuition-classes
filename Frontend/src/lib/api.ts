@@ -65,3 +65,10 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+export function apiGet<T = unknown>(endpoint: string): () => Promise<T> {
+  return async () => {
+    const { data } = await api.get<T>(endpoint);
+    return data;
+  };
+}

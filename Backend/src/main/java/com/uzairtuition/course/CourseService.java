@@ -3,6 +3,7 @@ package com.uzairtuition.course;
 import com.uzairtuition.batch.BatchStudentRepository;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,14 +34,13 @@ public class CourseService {
     }
 
     public CourseResponse getCourse(Long id) {
-        Course course = findOrThrow(id);
+        Course course = EntityFinder.findOrThrow(courseRepository.findById(id), "Course");
         return CourseResponse.from(course, materialRepository.countByCourseId(id));
     }
 
     @Transactional
     public CourseResponse createCourse(CourseRequest req, String creatorEmail) {
-        User creator = userRepository.findByEmail(creatorEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        User creator = EntityFinder.findOrThrow(userRepository.findByEmail(creatorEmail), "User");
         Course course = Course.builder()
                 .title(req.title().trim())
                 .description(req.description())
@@ -54,7 +54,7 @@ public class CourseService {
 
     @Transactional
     public CourseResponse updateCourse(Long id, CourseRequest req) {
-        Course course = findOrThrow(id);
+        Course course = EntityFinder.findOrThrow(courseRepository.findById(id), "Course");
         course.setTitle(req.title().trim());
         course.setDescription(req.description());
         course.setDuration(req.duration());
@@ -66,16 +66,13 @@ public class CourseService {
 
     @Transactional
     public void deleteCourse(Long id) {
-        findOrThrow(id);
+        EntityFinder.findOrThrow(courseRepository.findById(id), "Course");
         courseRepository.deleteById(id);
     }
 
-    // Materials
-
     public List<CourseMaterialResponse> getStudentMaterials(Long courseId, String studentEmail) {
-        findOrThrow(courseId);
-        User student = userRepository.findByEmail(studentEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        EntityFinder.findOrThrow(courseRepository.findById(courseId), "Course");
+        User student = EntityFinder.findOrThrow(userRepository.findByEmail(studentEmail), "User");
         boolean enrolled = batchStudentRepository.existsByBatch_CourseIdAndStudentId(courseId, student.getId());
         if (!enrolled) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not enrolled in this course.");
@@ -86,7 +83,7 @@ public class CourseService {
     }
 
     public List<CourseMaterialResponse> getMaterials(Long courseId) {
-        findOrThrow(courseId);
+        EntityFinder.findOrThrow(courseRepository.findById(courseId), "Course");
         return materialRepository.findByCourseIdOrderByCreatedAtDesc(courseId).stream()
                 .map(CourseMaterialResponse::from)
                 .toList();
@@ -94,9 +91,8 @@ public class CourseService {
 
     @Transactional
     public CourseMaterialResponse addMaterial(Long courseId, CourseMaterialRequest req, String uploaderEmail) {
-        Course course = findOrThrow(courseId);
-        User uploader = userRepository.findByEmail(uploaderEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        Course course = EntityFinder.findOrThrow(courseRepository.findById(courseId), "Course");
+        User uploader = EntityFinder.findOrThrow(userRepository.findByEmail(uploaderEmail), "User");
         CourseMaterial material = CourseMaterial.builder()
                 .course(course)
                 .title(req.title().trim())
@@ -109,17 +105,11 @@ public class CourseService {
 
     @Transactional
     public void deleteMaterial(Long courseId, Long materialId) {
-        findOrThrow(courseId);
-        CourseMaterial material = materialRepository.findById(materialId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Material not found."));
+        EntityFinder.findOrThrow(courseRepository.findById(courseId), "Course");
+        CourseMaterial material = EntityFinder.findOrThrow(materialRepository.findById(materialId), "Material");
         if (!material.getCourse().getId().equals(courseId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Material does not belong to this course.");
         }
         materialRepository.deleteById(materialId);
-    }
-
-    private Course findOrThrow(Long id) {
-        return courseRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found."));
     }
 }

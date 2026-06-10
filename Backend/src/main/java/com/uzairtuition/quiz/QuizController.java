@@ -1,6 +1,7 @@
 package com.uzairtuition.quiz;
 
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EntityFinder;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -81,8 +82,7 @@ public class QuizController {
     @GetMapping("/api/student/quizzes")
     @PreAuthorize("hasRole('STUDENT')")
     public List<QuizSummaryResponse> getStudentQuizzes(Principal principal) {
-        var user = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        var user = EntityFinder.findOrThrow(userRepository.findByEmail(principal.getName()), "User");
         return quizService.getStudentQuizzes(user.getId());
     }
 
@@ -97,16 +97,14 @@ public class QuizController {
     @ResponseStatus(HttpStatus.CREATED)
     public AttemptResponse submitAttempt(@PathVariable Long id, @Valid @RequestBody AttemptSubmitRequest req,
                                          Principal principal) {
-        var user = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        var user = EntityFinder.findOrThrow(userRepository.findByEmail(principal.getName()), "User");
         return quizService.submitAttempt(id, user.getId(), req);
     }
 
     @GetMapping("/api/student/attempts")
     @PreAuthorize("hasRole('STUDENT')")
     public List<AttemptResponse> getStudentAttempts(Principal principal) {
-        var user = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        var user = EntityFinder.findOrThrow(userRepository.findByEmail(principal.getName()), "User");
         return quizService.getStudentAttempts(user.getId());
     }
 }

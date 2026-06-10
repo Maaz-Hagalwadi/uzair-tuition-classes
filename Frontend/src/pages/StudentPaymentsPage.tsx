@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { STUDENT_NAV } from '../lib/studentNav';
-import api from '../lib/api';
+import { apiGet } from '../lib/api';
+import { PAYMENT_STATUS_META } from '../lib/statusMeta';
 
 interface Payment {
   id: number;
@@ -14,13 +15,6 @@ interface Payment {
   createdAt: string;
 }
 
-const STATUS_META: Record<string, { label: string; bg: string; text: string; icon: string }> = {
-  PENDING: { label: 'Pending', bg: '#fff7ed', text: '#c2410c', icon: 'schedule' },
-  PAID:    { label: 'Paid',    bg: '#f0fdf4', text: '#16a34a', icon: 'check_circle' },
-  OVERDUE: { label: 'Overdue', bg: '#fef2f2', text: '#dc2626', icon: 'warning' },
-  WAIVED:  { label: 'Waived',  bg: '#f3f4f6', text: '#6b7280', icon: 'do_not_disturb_on' },
-};
-
 function fmtDate(d: string | null) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -32,7 +26,7 @@ function fmtAmount(n: number) {
 export default function StudentPaymentsPage() {
   const { data: payments = [], isLoading } = useQuery<Payment[]>({
     queryKey: ['student-payments'],
-    queryFn: async () => { const { data } = await api.get('/student/payments'); return data; },
+    queryFn: apiGet('/student/payments'),
   });
 
   const pending = payments.filter(p => p.status === 'PENDING' || p.status === 'OVERDUE');
@@ -82,7 +76,7 @@ export default function StudentPaymentsPage() {
         ) : (
           <div className="space-y-3">
             {payments.map(p => {
-              const meta = STATUS_META[p.status] ?? STATUS_META.PENDING;
+              const meta = PAYMENT_STATUS_META[p.status] ?? PAYMENT_STATUS_META.PENDING;
               return (
                 <div key={p.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-3 sm:p-4 flex items-start gap-3 sm:gap-4">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0"

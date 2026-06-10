@@ -3,26 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { TEACHER_NAV } from '../lib/teacherNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
+import { QUIZ_STATUS_META } from '../lib/statusMeta';
 
 interface Batch { id: number; name: string; courseName: string; status: string; }
 interface QuizSummary {
   id: number;
   title: string;
   description: string | null;
-  batchId: number;
   batchName: string;
   timeLimitMinutes: number | null;
   status: string;
   questionCount: number;
-  createdAt: string;
 }
-
-const STATUS_META: Record<string, { label: string; bg: string; text: string }> = {
-  DRAFT:     { label: 'Draft',     bg: '#f3f4f6', text: '#6b7280' },
-  PUBLISHED: { label: 'Published', bg: '#f0fdf4', text: '#16a34a' },
-  CLOSED:    { label: 'Closed',    bg: '#fef2f2', text: '#dc2626' },
-};
 
 // ── Create Modal ──────────────────────────────────────────────────────────────
 function CreateQuizModal({ batches, onClose, onCreated }: {
@@ -117,7 +110,7 @@ export default function TeacherQuizzesPage() {
 
   const { data: batches = [] } = useQuery<Batch[]>({
     queryKey: ['teacher-batches'],
-    queryFn: async () => { const { data } = await api.get('/teacher/batches'); return data; },
+    queryFn: apiGet('/teacher/batches'),
   });
 
   const { data: quizzesByBatch = {}, isLoading } = useQuery<Record<number, QuizSummary[]>>({
@@ -125,7 +118,7 @@ export default function TeacherQuizzesPage() {
     queryFn: async () => {
       const entries = await Promise.all(
         batches.map(async b => {
-          const { data } = await api.get<QuizSummary[]>(`/teacher/batches/${b.id}/quizzes`);
+          const data = await apiGet<QuizSummary[]>(`/teacher/batches/${b.id}/quizzes`)();
           return [b.id, data] as [number, QuizSummary[]];
         })
       );
@@ -209,7 +202,7 @@ export default function TeacherQuizzesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {filtered.map(quiz => {
-              const meta = STATUS_META[quiz.status] ?? STATUS_META.DRAFT;
+              const meta = QUIZ_STATUS_META[quiz.status] ?? QUIZ_STATUS_META.DRAFT;
               return (
                 <div key={quiz.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-4 sm:p-5 flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">

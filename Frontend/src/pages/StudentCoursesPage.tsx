@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { STUDENT_NAV } from '../lib/studentNav';
-import api from '../lib/api';
+import { apiGet } from '../lib/api';
+import { BATCH_BROWSE_STATUS_META } from '../lib/statusMeta';
 
 interface Batch {
   id: number;
@@ -26,12 +27,6 @@ interface Material {
   fileType: string | null;
   uploadedByName: string | null;
 }
-
-const STATUS_META: Record<string, { label: string; color: string; dot: string; bg: string }> = {
-  ACTIVE:    { label: 'Active',    color: '#15803d', dot: '#22c55e', bg: '#f0fdf4' },
-  UPCOMING:  { label: 'Upcoming',  color: '#1d4ed8', dot: '#60a5fa', bg: '#eff6ff' },
-  COMPLETED: { label: 'Completed', color: '#64748b', dot: '#94a3b8', bg: '#f8fafc' },
-};
 
 const FILE_META: Record<string, { icon: string; color: string; bg: string }> = {
   PDF:   { icon: 'picture_as_pdf', color: '#dc2626', bg: '#fef2f2' },
@@ -58,7 +53,7 @@ function fmtDate(d: string | null) {
 function MaterialsList({ courseId }: { courseId: number }) {
   const { data: materials = [], isLoading } = useQuery<Material[]>({
     queryKey: ['student-materials', courseId],
-    queryFn: async () => { const { data } = await api.get(`/student/courses/${courseId}/materials`); return data; },
+    queryFn: apiGet(`/student/courses/${courseId}/materials`),
   });
   return (
     <div className="rounded-xl border border-[#e2e8f0] overflow-hidden">
@@ -120,7 +115,7 @@ export default function StudentCoursesPage() {
 
   const { data: batches = [], isLoading } = useQuery<Batch[]>({
     queryKey: ['student-batches'],
-    queryFn: async () => { const { data } = await api.get('/student/batches'); return data; },
+    queryFn: apiGet('/student/batches'),
   });
 
   const counts = useMemo(() => ({
@@ -223,7 +218,7 @@ export default function StudentCoursesPage() {
               {/* Mobile cards */}
               <div className="sm:hidden divide-y divide-[#f1f5f9]">
                 {paginated.map(batch => {
-                  const meta = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
+                  const meta = BATCH_BROWSE_STATUS_META[batch.status] ?? BATCH_BROWSE_STATUS_META.COMPLETED;
                   const isExpanded = expandedId === batch.courseId;
                   const gradient = COURSE_GRADIENTS[batch.courseId % COURSE_GRADIENTS.length];
                   const initials = batch.courseName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -305,7 +300,7 @@ export default function StudentCoursesPage() {
                 </thead>
                 <tbody className="divide-y divide-[#f1f5f9]">
                   {paginated.map((batch) => {
-                    const meta       = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
+                    const meta       = BATCH_BROWSE_STATUS_META[batch.status] ?? BATCH_BROWSE_STATUS_META.COMPLETED;
                     const isExpanded = expandedId === batch.courseId;
                     const fillPct    = batch.maxStudents > 0
                       ? Math.min(100, Math.round((batch.studentCount / batch.maxStudents) * 100)) : 0;

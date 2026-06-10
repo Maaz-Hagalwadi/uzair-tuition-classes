@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { STUDENT_NAV } from '../lib/studentNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
 
 interface QuizOption { id: number; optionText: string; isCorrect: boolean | null; orderIndex: number; }
 interface QuizQuestion { id: number; questionText: string; questionType: string; marks: number; orderIndex: number; options: QuizOption[]; }
@@ -29,12 +29,12 @@ export default function StudentQuizPage() {
 
   const { data: detail, isLoading } = useQuery<QuizDetail>({
     queryKey: ['student-quiz-detail', quizId],
-    queryFn: async () => { const { data } = await api.get(`/student/quizzes/${quizId}`); return data; },
+    queryFn: apiGet(`/student/quizzes/${quizId}`),
   });
 
   const { data: attempts = [] } = useQuery<Attempt[]>({
     queryKey: ['student-attempts'],
-    queryFn: async () => { const { data } = await api.get('/student/attempts'); return data; },
+    queryFn: apiGet('/student/attempts'),
   });
 
   const existingAttempt = useMemo(() =>

@@ -3,6 +3,7 @@ package com.uzairtuition.lead;
 import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.UserRepository;
 import com.uzairtuition.util.EmailService;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -73,18 +74,13 @@ public class LeadService {
         if (!VALID_STATUSES.contains(status.toUpperCase())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status: " + status);
         }
-        Lead lead = findOrThrow(id);
+        Lead lead = EntityFinder.findOrThrow(leadRepository.findById(id), "Lead");
         lead.setStatus(status.toUpperCase());
         return LeadResponse.from(leadRepository.save(lead));
     }
 
     public void deleteLead(Long id) {
-        findOrThrow(id);
+        EntityFinder.findOrThrow(leadRepository.findById(id), "Lead");
         leadRepository.deleteById(id);
-    }
-
-    private Lead findOrThrow(Long id) {
-        return leadRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lead not found."));
     }
 }

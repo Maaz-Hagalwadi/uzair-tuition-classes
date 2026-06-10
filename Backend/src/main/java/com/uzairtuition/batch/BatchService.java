@@ -4,6 +4,7 @@ import com.uzairtuition.course.CourseRepository;
 import com.uzairtuition.enrollment.EnrollmentRequestRepository;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class BatchService {
     }
 
     public BatchResponse getBatch(Long id) {
-        Batch batch = findOrThrow(id);
+        Batch batch = EntityFinder.findOrThrow(batchRepository.findById(id), "Batch");
         return BatchResponse.from(batch, batchStudentRepository.countByBatchId(id));
     }
 
@@ -55,8 +56,7 @@ public class BatchService {
     }
 
     public List<BatchBrowseResponse> browseBatches(String studentEmail) {
-        User student = userRepository.findByEmail(studentEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        User student = EntityFinder.findOrThrow(userRepository.findByEmail(studentEmail), "User");
         return batchRepository.findByStatusInOrderByStartDateDesc(List.of("ACTIVE", "UPCOMING")).stream()
                 .map(b -> {
                     long count = batchStudentRepository.countByBatchId(b.getId());
@@ -72,8 +72,7 @@ public class BatchService {
 
     @Transactional
     public BatchResponse createBatch(BatchRequest req) {
-        var course = courseRepository.findById(req.courseId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found."));
+        var course = EntityFinder.findOrThrow(courseRepository.findById(req.courseId()), "Course");
         User teacher = resolveTeacher(req.teacherId());
 
         Batch batch = Batch.builder()
@@ -91,9 +90,8 @@ public class BatchService {
 
     @Transactional
     public BatchResponse updateBatch(Long id, BatchRequest req) {
-        Batch batch = findOrThrow(id);
-        var course = courseRepository.findById(req.courseId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found."));
+        Batch batch = EntityFinder.findOrThrow(batchRepository.findById(id), "Batch");
+        var course = EntityFinder.findOrThrow(courseRepository.findById(req.courseId()), "Course");
 
         batch.setName(req.name().trim());
         batch.setCourse(course);
@@ -110,14 +108,12 @@ public class BatchService {
 
     @Transactional
     public void deleteBatch(Long id) {
-        findOrThrow(id);
+        EntityFinder.findOrThrow(batchRepository.findById(id), "Batch");
         batchRepository.deleteById(id);
     }
 
-    // Students
-
     public List<BatchStudentResponse> getStudents(Long batchId) {
-        findOrThrow(batchId);
+        EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
         return batchStudentRepository.findByBatchIdOrderByEnrolledAtDesc(batchId).stream()
                 .map(BatchStudentResponse::from)
                 .toList();
@@ -125,9 +121,8 @@ public class BatchService {
 
     @Transactional
     public BatchStudentResponse enrollStudent(Long batchId, Long studentId) {
-        Batch batch = findOrThrow(batchId);
-        User student = userRepository.findById(studentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found."));
+        Batch batch = EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
+        User student = EntityFinder.findOrThrow(userRepository.findById(studentId), "Student");
 
         boolean isStudent = student.getRoles().stream().anyMatch(r -> r.getName().equals("STUDENT"));
         if (!isStudent) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a student.");
@@ -147,21 +142,15 @@ public class BatchService {
 
     @Transactional
     public void removeStudent(Long batchId, Long studentId) {
-        findOrThrow(batchId);
-        BatchStudent bs = batchStudentRepository.findByBatchIdAndStudentId(batchId, studentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Enrollment not found."));
+        EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
+        BatchStudent bs = EntityFinder.findOrThrow(
+                batchStudentRepository.findByBatchIdAndStudentId(batchId, studentId), "Enrollment");
         batchStudentRepository.delete(bs);
-    }
-
-    private Batch findOrThrow(Long id) {
-        return batchRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Batch not found."));
     }
 
     private User resolveTeacher(Long teacherId) {
         if (teacherId == null) return null;
-        User teacher = userRepository.findById(teacherId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher not found."));
+        User teacher = EntityFinder.findOrThrow(userRepository.findById(teacherId), "Teacher");
         boolean isTeacher = teacher.getRoles().stream().anyMatch(r -> r.getName().equals("TEACHER"));
         if (!isTeacher) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a teacher.");
         return teacher;

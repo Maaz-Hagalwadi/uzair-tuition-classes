@@ -1,6 +1,7 @@
 package com.uzairtuition.user;
 
 import com.uzairtuition.util.EmailService;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,7 +34,7 @@ public class UserService {
 
     @Transactional
     public UserResponse approveTeacher(Long userId) {
-        User user = findOrThrow(userId);
+        User user = EntityFinder.findOrThrow(userRepository.findById(userId), "User");
         if (user.getRoles().stream().noneMatch(r -> r.getName().equals("TEACHER"))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a teacher.");
         }
@@ -46,7 +47,7 @@ public class UserService {
 
     @Transactional
     public UserResponse setActive(Long userId, boolean active) {
-        User user = findOrThrow(userId);
+        User user = EntityFinder.findOrThrow(userRepository.findById(userId), "User");
         user.setActive(active);
         return UserResponse.from(userRepository.save(user));
     }
@@ -70,10 +71,5 @@ public class UserService {
                 .roles(Set.of(role))
                 .build();
         return UserResponse.from(userRepository.save(user));
-    }
-
-    private User findOrThrow(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
     }
 }

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { STUDENT_NAV } from '../lib/studentNav';
-import api from '../lib/api';
+import { apiGet } from '../lib/api';
 
 interface QuizSummary {
   id: number;
@@ -30,12 +30,12 @@ interface Attempt {
 export default function StudentQuizzesPage() {
   const { data: quizzes = [], isLoading: quizzesLoading } = useQuery<QuizSummary[]>({
     queryKey: ['student-quizzes'],
-    queryFn: async () => { const { data } = await api.get('/student/quizzes'); return data; },
+    queryFn: apiGet('/student/quizzes'),
   });
 
   const { data: attempts = [] } = useQuery<Attempt[]>({
     queryKey: ['student-attempts'],
-    queryFn: async () => { const { data } = await api.get('/student/attempts'); return data; },
+    queryFn: apiGet('/student/attempts'),
   });
 
   const attemptMap = useMemo(() =>

@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { ADMIN_NAV } from '../lib/adminNav';
 export { ADMIN_NAV };
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
+import { COURSE_STATUS_META } from '../lib/statusMeta';
 
 interface Course {
   id: number;
@@ -13,9 +14,7 @@ interface Course {
   duration: string | null;
   thumbnailUrl: string | null;
   status: string;
-  createdByName: string | null;
   materialCount: number;
-  createdAt: string;
 }
 
 interface CourseForm {
@@ -28,14 +27,8 @@ interface CourseForm {
 
 const EMPTY_FORM: CourseForm = { title: '', description: '', duration: '', thumbnailUrl: '', status: 'ACTIVE' };
 
-const STATUS_META: Record<string, { bg: string; text: string; dot: string }> = {
-  ACTIVE:   { bg: 'bg-[#d8f4e4]', text: 'text-[#0a3320]', dot: 'bg-[#1a6b3a]' },
-  DRAFT:    { bg: 'bg-[#fef9c3]', text: 'text-[#713f12]', dot: 'bg-[#ca8a04]' },
-  INACTIVE: { bg: 'bg-[#e4e2e6]', text: 'text-[#47464f]', dot: 'bg-[#787680]' },
-};
-
 function StatusBadge({ status }: { status: string }) {
-  const m = STATUS_META[status] ?? STATUS_META.INACTIVE;
+  const m = COURSE_STATUS_META[status] ?? COURSE_STATUS_META.INACTIVE;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${m.bg} ${m.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} />
@@ -177,7 +170,7 @@ export default function AdminCoursesPage() {
 
   const { data: courses = [], isLoading, isError } = useQuery<Course[]>({
     queryKey: ['admin-courses'],
-    queryFn: async () => { const { data } = await api.get('/admin/courses'); return data; },
+    queryFn: apiGet('/admin/courses'),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin-courses'] });

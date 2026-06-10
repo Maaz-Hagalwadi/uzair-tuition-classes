@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { TEACHER_NAV } from '../lib/teacherNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
 
 interface Batch {
   id: number;
@@ -212,7 +212,7 @@ export default function TeacherMaterialsPage() {
 
   const { data: batches = [], isLoading: batchLoading } = useQuery<Batch[]>({
     queryKey: ['teacher-batches'],
-    queryFn: async () => { const { data } = await api.get('/teacher/batches'); return data; },
+    queryFn: apiGet('/teacher/batches'),
   });
 
   // Unique courses from teacher's batches
@@ -224,7 +224,7 @@ export default function TeacherMaterialsPage() {
     queryFn: async () => {
       const entries = await Promise.all(
         courses.map(async c => {
-          const { data } = await api.get<Material[]>(`/admin/courses/${c.id}/materials`);
+          const data = await apiGet<Material[]>(`/admin/courses/${c.id}/materials`)();
           return [c.id, data] as [number, Material[]];
         })
       );

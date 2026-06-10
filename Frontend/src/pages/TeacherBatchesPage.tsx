@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
 import { TEACHER_NAV } from '../lib/teacherNav';
-import api from '../lib/api';
+import { apiGet } from '../lib/api';
+import { BATCH_STATUS_INLINE_META } from '../lib/statusMeta';
 
 interface Batch {
   id: number;
@@ -26,12 +27,6 @@ const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: 'COMPLETED', label: 'Completed' },
 ];
 
-const STATUS_META: Record<string, { bg: string; text: string; dot: string }> = {
-  UPCOMING:  { bg: '#eff6ff', text: '#1d4ed8', dot: '#3b82f6' },
-  ACTIVE:    { bg: '#f0fdf4', text: '#15803d', dot: '#16a34a' },
-  COMPLETED: { bg: '#f9fafb', text: '#6b7280', dot: '#9ca3af' },
-};
-
 const BATCH_GRADIENTS = [
   'from-[#6366f1] to-[#8b5cf6]',
   'from-[#0ea5e9] to-[#6366f1]',
@@ -50,7 +45,7 @@ export default function TeacherBatchesPage() {
 
   const { data: batches = [], isLoading } = useQuery<Batch[]>({
     queryKey: ['teacher-batches'],
-    queryFn: async () => { const { data } = await api.get('/teacher/batches'); return data; },
+    queryFn: apiGet('/teacher/batches'),
   });
 
   const filtered = tab === 'ALL' ? batches : batches.filter(b => b.status === tab);
@@ -109,7 +104,7 @@ export default function TeacherBatchesPage() {
               {/* Mobile list */}
               <div className="sm:hidden divide-y divide-[#f1f5f9]">
                 {filtered.map((batch, idx) => {
-                  const meta = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
+                  const meta = BATCH_STATUS_INLINE_META[batch.status] ?? BATCH_STATUS_INLINE_META.COMPLETED;
                   const pct  = batch.maxStudents > 0 ? Math.round((batch.studentCount / batch.maxStudents) * 100) : 0;
                   const grad = BATCH_GRADIENTS[idx % BATCH_GRADIENTS.length];
                   const initials = batch.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -167,7 +162,7 @@ export default function TeacherBatchesPage() {
                 </thead>
                 <tbody className="divide-y divide-[#f1f5f9]">
                   {filtered.map((batch, idx) => {
-                    const meta = STATUS_META[batch.status] ?? STATUS_META.COMPLETED;
+                    const meta = BATCH_STATUS_INLINE_META[batch.status] ?? BATCH_STATUS_INLINE_META.COMPLETED;
                     const pct  = batch.maxStudents > 0 ? Math.round((batch.studentCount / batch.maxStudents) * 100) : 0;
                     const grad = BATCH_GRADIENTS[idx % BATCH_GRADIENTS.length];
                     const initials = batch.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();

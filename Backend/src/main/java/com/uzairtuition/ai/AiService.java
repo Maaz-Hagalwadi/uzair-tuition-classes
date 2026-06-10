@@ -30,7 +30,6 @@ public class AiService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @SuppressWarnings("unchecked")
     public AiChatResponse chat(List<AiMessage> history) {
         if (apiKey == null || apiKey.isBlank()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
@@ -52,14 +51,9 @@ public class AiService {
         headers.setBearerAuth(apiKey);
 
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    GROQ_URL, new HttpEntity<>(body, headers), Map.class);
-
-            List<Map<String, Object>> choices =
-                    (List<Map<String, Object>>) response.getBody().get("choices");
-            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-            return new AiChatResponse((String) message.get("content"));
-
+            ResponseEntity<GroqResponse> response = restTemplate.postForEntity(
+                    GROQ_URL, new HttpEntity<>(body, headers), GroqResponse.class);
+            return new AiChatResponse(response.getBody().choices().get(0).message().content());
         } catch (Exception e) {
             log.error("xAI API call failed: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,

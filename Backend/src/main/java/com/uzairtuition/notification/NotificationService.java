@@ -1,6 +1,7 @@
 package com.uzairtuition.notification;
 
 import com.uzairtuition.user.User;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -40,8 +41,7 @@ public class NotificationService {
 
     @Transactional
     public void markRead(Long notificationId, Long userId) {
-        Notification n = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found."));
+        Notification n = EntityFinder.findOrThrow(notificationRepository.findById(notificationId), "Notification");
         if (!n.getUser().getId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied.");
         }

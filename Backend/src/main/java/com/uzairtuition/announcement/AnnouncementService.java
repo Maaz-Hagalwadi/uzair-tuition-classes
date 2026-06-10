@@ -7,6 +7,7 @@ import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
 import com.uzairtuition.util.EmailService;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -29,13 +30,11 @@ public class AnnouncementService {
 
     @Transactional
     public AnnouncementResponse create(AnnouncementRequest req, String authorEmail) {
-        User author = userRepository.findByEmail(authorEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        User author = EntityFinder.findOrThrow(userRepository.findByEmail(authorEmail), "User");
 
         Batch batch = null;
         if (req.batchId() != null) {
-            batch = batchRepository.findById(req.batchId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Batch not found."));
+            batch = EntityFinder.findOrThrow(batchRepository.findById(req.batchId()), "Batch");
         }
 
         Announcement a = Announcement.builder()

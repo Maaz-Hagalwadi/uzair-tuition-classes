@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import { ADMIN_NAV } from '../lib/adminNav';
-import api from '../lib/api';
+import api, { apiGet } from '../lib/api';
 
 interface EnrollmentRequest {
   id: number;
@@ -50,7 +50,7 @@ export default function AdminEnrollmentPage() {
 
   const { data: pendingCount } = useQuery<{ count: number }>({
     queryKey: ['admin-enrollment-pending-count'],
-    queryFn: async () => { const { data } = await api.get('/admin/enrollment-requests/pending-count'); return data; },
+    queryFn: apiGet('/admin/enrollment-requests/pending-count'),
   });
 
   const approve = useMutation({

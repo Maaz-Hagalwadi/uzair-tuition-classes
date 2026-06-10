@@ -5,11 +5,10 @@ import com.uzairtuition.batch.BatchStudentRepository;
 import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.UserRepository;
 import com.uzairtuition.util.EmailService;
+import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -42,10 +41,8 @@ public class ClassSessionService {
 
     @Transactional
     public ClassSessionResponse create(Long batchId, ClassSessionRequest req, String creatorEmail) {
-        var batch = batchRepository.findById(batchId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Batch not found."));
-        var creator = userRepository.findByEmail(creatorEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        var batch = EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
+        var creator = EntityFinder.findOrThrow(userRepository.findByEmail(creatorEmail), "User");
 
         ClassSession session = ClassSession.builder()
                 .batch(batch)
@@ -81,7 +78,7 @@ public class ClassSessionService {
 
     @Transactional
     public ClassSessionResponse update(Long sessionId, ClassSessionRequest req) {
-        ClassSession session = findOrThrow(sessionId);
+        ClassSession session = EntityFinder.findOrThrow(sessionRepository.findById(sessionId), "Session");
         session.setTitle(req.title().trim());
         session.setSessionDate(req.sessionDate());
         session.setStartTime(req.startTime());
@@ -93,12 +90,7 @@ public class ClassSessionService {
 
     @Transactional
     public void delete(Long sessionId) {
-        findOrThrow(sessionId);
+        EntityFinder.findOrThrow(sessionRepository.findById(sessionId), "Session");
         sessionRepository.deleteById(sessionId);
-    }
-
-    private ClassSession findOrThrow(Long id) {
-        return sessionRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found."));
     }
 }
