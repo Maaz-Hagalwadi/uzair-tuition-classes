@@ -41,12 +41,18 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link
             to="/login"
-            className="px-4 py-1.5 bg-[#1e1b4b] text-white rounded-full text-sm font-medium hover:opacity-90 transition-all shadow-md"
+            className="px-4 py-1.5 border border-[#1e1b4b] text-[#1e1b4b] rounded-full text-sm font-medium hover:bg-[#1e1b4b] hover:text-white transition-all"
           >
             Login
+          </Link>
+          <Link
+            to="/register"
+            className="px-4 py-1.5 bg-[#1e1b4b] text-white rounded-full text-sm font-medium hover:opacity-90 transition-all shadow-md"
+          >
+            Get Started
           </Link>
           <button
             className="md:hidden text-[#1e1b4b]"
@@ -69,6 +75,16 @@ export default function Navbar() {
               {link.label}
             </a>
           ))}
+          <div className="flex gap-3 pt-2">
+            <Link to="/login" onClick={() => setMobileOpen(false)}
+              className="flex-1 text-center px-4 py-2 border border-[#1e1b4b] text-[#1e1b4b] rounded-full text-sm font-medium">
+              Login
+            </Link>
+            <Link to="/register" onClick={() => setMobileOpen(false)}
+              className="flex-1 text-center px-4 py-2 bg-[#1e1b4b] text-white rounded-full text-sm font-medium">
+              Get Started
+            </Link>
+          </div>
         </div>
       )}
     </header>
