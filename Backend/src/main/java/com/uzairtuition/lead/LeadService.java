@@ -2,6 +2,7 @@ package com.uzairtuition.lead;
 
 import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class LeadService {
     private final LeadRepository leadRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public LeadResponse submitLead(LeadRequest req) {
         Lead lead = Lead.builder()
@@ -33,14 +35,19 @@ public class LeadService {
                 .build();
         LeadResponse response = LeadResponse.from(leadRepository.save(lead));
 
-        userRepository.findByRoleName("ADMIN")
-                .forEach(admin -> notificationService.createForUser(
-                        admin, "NEW_LEAD",
-                        "New Enquiry Received",
-                        lead.getFullName() + " enquired about "
-                                + (lead.getInterestedCourse() != null ? lead.getInterestedCourse() : "a course") + ".",
-                        lead.getId()
-                ));
+        userRepository.findByRoleName("ADMIN").forEach(admin -> {
+            notificationService.createForUser(
+                    admin, "NEW_LEAD",
+                    "New Enquiry Received",
+                    lead.getFullName() + " enquired about "
+                            + (lead.getInterestedCourse() != null ? lead.getInterestedCourse() : "a course") + ".",
+                    lead.getId()
+            );
+            emailService.sendNewLeadEmail(
+                    admin.getEmail(), lead.getFullName(), lead.getEmail(),
+                    lead.getPhone(), lead.getInterestedCourse()
+            );
+        });
 
         return response;
     }

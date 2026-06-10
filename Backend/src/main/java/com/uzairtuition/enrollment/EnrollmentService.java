@@ -7,6 +7,7 @@ import com.uzairtuition.batch.BatchStudentRepository;
 import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class EnrollmentService {
     private final BatchRepository batchRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     @Transactional
     public EnrollmentRequestResponse requestEnrollment(Long batchId, String studentEmail) {
@@ -49,11 +51,15 @@ public class EnrollmentService {
         String notifMsg   = student.getFirstName() + " " + student.getLastName()
                 + " has requested to join " + batch.getName() + ".";
 
+        String studentName = student.getFirstName() + " " + student.getLastName();
         if (batch.getTeacher() != null) {
             notificationService.createForUser(batch.getTeacher(), "ENROLLMENT_REQUEST", notifTitle, notifMsg, req.getId());
+            emailService.sendEnrollmentRequestToAdmin(batch.getTeacher().getEmail(), studentName, batch.getName());
         }
-        userRepository.findByRoleName("ADMIN")
-                .forEach(admin -> notificationService.createForUser(admin, "ENROLLMENT_REQUEST", notifTitle, notifMsg, req.getId()));
+        userRepository.findByRoleName("ADMIN").forEach(admin -> {
+            notificationService.createForUser(admin, "ENROLLMENT_REQUEST", notifTitle, notifMsg, req.getId());
+            emailService.sendEnrollmentRequestToAdmin(admin.getEmail(), studentName, batch.getName());
+        });
 
         return response;
     }
@@ -100,6 +106,8 @@ public class EnrollmentService {
                 "Your enrollment in " + req.getBatch().getName() + " has been approved. Welcome!",
                 req.getBatch().getId()
         );
+        emailService.sendEnrollmentApprovedEmail(
+                req.getStudent().getEmail(), req.getStudent().getFirstName(), req.getBatch().getName());
         return result;
     }
 
@@ -119,6 +127,8 @@ public class EnrollmentService {
                         + (note != null && !note.isBlank() ? " Reason: " + note : ""),
                 req.getBatch().getId()
         );
+        emailService.sendEnrollmentRejectedEmail(
+                req.getStudent().getEmail(), req.getStudent().getFirstName(), req.getBatch().getName(), note);
         return result;
     }
 

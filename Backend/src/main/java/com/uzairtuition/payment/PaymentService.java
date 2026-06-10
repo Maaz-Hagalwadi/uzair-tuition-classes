@@ -5,6 +5,7 @@ import com.uzairtuition.batch.BatchRepository;
 import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final BatchRepository batchRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public List<PaymentResponse> getAll(String status) {
         List<Payment> payments = (status != null && !status.isBlank())
@@ -86,6 +88,9 @@ public class PaymentService {
             default        -> "Your payment status for " + payment.getBatch().getName() + " has been updated to " + newStatus + ".";
         };
         notificationService.createForUser(payment.getStudent(), "PAYMENT_UPDATED", "Payment Update", msg, payment.getId());
+        emailService.sendPaymentUpdateEmail(
+                payment.getStudent().getEmail(), payment.getStudent().getFirstName(),
+                payment.getBatch().getName(), newStatus);
 
         return response;
     }

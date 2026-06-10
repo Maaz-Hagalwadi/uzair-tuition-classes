@@ -68,6 +68,10 @@ app:
   groq:
     api-key: ${GROQ_API_KEY:dummy}
 
+  resend:
+    api-key: ${RESEND_API_KEY:dummy}
+    from: ${MAIL_FROM:onboarding@resend.dev}
+
   aws:
     access-key: ${AWS_ACCESS_KEY_ID:dummy}
     secret-key: ${AWS_SECRET_ACCESS_KEY:dummy}

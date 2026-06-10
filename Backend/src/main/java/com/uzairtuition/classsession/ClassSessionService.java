@@ -4,6 +4,7 @@ import com.uzairtuition.batch.BatchRepository;
 import com.uzairtuition.batch.BatchStudentRepository;
 import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class ClassSessionService {
     private final BatchStudentRepository batchStudentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public List<ClassSessionResponse> getBatchSessions(Long batchId) {
         return sessionRepository.findByBatchIdOrderBySessionDateAscStartTimeAsc(batchId)
@@ -58,12 +60,21 @@ public class ClassSessionService {
         ClassSessionResponse response = ClassSessionResponse.from(sessionRepository.save(session));
 
         batchStudentRepository.findByBatchIdOrderByEnrolledAtDesc(batchId)
-                .forEach(bs -> notificationService.createForUser(
-                        bs.getStudent(), "NEW_SESSION",
-                        "New Session Scheduled",
-                        req.title().trim() + " on " + req.sessionDate() + " at " + req.startTime(),
-                        session.getId()
-                ));
+                .forEach(bs -> {
+                    notificationService.createForUser(
+                            bs.getStudent(), "NEW_SESSION",
+                            "New Session Scheduled",
+                            req.title().trim() + " on " + req.sessionDate() + " at " + req.startTime(),
+                            session.getId()
+                    );
+                    emailService.sendNewSessionEmail(
+                            bs.getStudent().getEmail(), bs.getStudent().getFirstName(),
+                            req.title().trim(), req.sessionDate(),
+                            req.startTime() != null ? req.startTime().toString() : "",
+                            req.endTime() != null ? req.endTime().toString() : "",
+                            req.meetingUrl(), req.meetingPlatform()
+                    );
+                });
 
         return response;
     }

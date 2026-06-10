@@ -6,6 +6,7 @@ import com.uzairtuition.batch.BatchStudentRepository;
 import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
+import com.uzairtuition.util.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class AnnouncementService {
     private final BatchStudentRepository batchStudentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     @Transactional
     public AnnouncementResponse create(AnnouncementRequest req, String authorEmail) {
@@ -46,13 +48,20 @@ public class AnnouncementService {
         AnnouncementResponse response = AnnouncementResponse.from(announcementRepository.save(a));
 
         if (batch != null) {
+            final String batchName = batch.getName();
             batchStudentRepository.findByBatchIdOrderByEnrolledAtDesc(batch.getId())
-                    .forEach(bs -> notificationService.createForUser(
-                            bs.getStudent(), "NEW_ANNOUNCEMENT",
-                            "New Announcement: " + a.getTitle(),
-                            a.getContent().length() > 120 ? a.getContent().substring(0, 120) + "…" : a.getContent(),
-                            a.getId()
-                    ));
+                    .forEach(bs -> {
+                        notificationService.createForUser(
+                                bs.getStudent(), "NEW_ANNOUNCEMENT",
+                                "New Announcement: " + a.getTitle(),
+                                a.getContent().length() > 120 ? a.getContent().substring(0, 120) + "…" : a.getContent(),
+                                a.getId()
+                        );
+                        emailService.sendAnnouncementEmail(
+                                bs.getStudent().getEmail(), bs.getStudent().getFirstName(),
+                                a.getTitle(), a.getContent(), batchName
+                        );
+                    });
         }
 
         return response;
