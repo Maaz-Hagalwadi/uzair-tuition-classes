@@ -8,7 +8,7 @@ type Role = 'STUDENT' | 'TEACHER';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_RE = /^[a-zA-Z\s\-']+$/;
-const PHONE_RE = /^[+\d][\d\s\-().]{6,19}$/;
+const PHONE_RE = /^\d{10}$/;
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -76,8 +76,8 @@ function validateEmail(v: string): string | undefined {
 }
 
 function validatePhone(v: string): string | undefined {
-  if (!v) return undefined;
-  if (!PHONE_RE.test(v)) return 'Enter a valid phone number.';
+  if (!v.trim()) return 'Phone number is required.';
+  if (!PHONE_RE.test(v)) return 'Enter a valid 10-digit phone number.';
 }
 
 function validatePassword(v: string): string | undefined {
@@ -156,7 +156,7 @@ export default function RegisterPage() {
         lastName,
         email,
         password,
-        phone: phone || undefined,
+        phone,
         role,
       });
       setSuccess(true);
@@ -341,7 +341,7 @@ export default function RegisterPage() {
             {/* Phone */}
             <div>
               <label className="block text-[13px] font-medium text-[#070235] mb-1.5">
-                Phone <span className="font-normal text-[#787680]">(optional)</span>
+                Phone number
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#505f76]">
