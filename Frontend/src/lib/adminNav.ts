@@ -11,6 +11,7 @@ export const ADMIN_NAV: NavItem[] = [
   { icon: 'bar_chart', label: 'Reports', href: '/admin/reports' },
   { icon: 'visibility', label: 'Visitors', href: '/admin/visitors' },
   { icon: 'history', label: 'Login History', href: '/admin/login-history' },
+  { icon: 'auto_awesome', label: 'AI Tools', href: '/admin/ai' },
   { icon: 'settings', label: 'Settings', href: '/admin/settings', bottom: true },
   { icon: 'help',     label: 'Support',  href: '/admin/support',  bottom: true },
 ];

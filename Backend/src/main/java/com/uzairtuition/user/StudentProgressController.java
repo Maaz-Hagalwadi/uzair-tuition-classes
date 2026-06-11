@@ -74,7 +74,7 @@ public class StudentProgressController {
         return computeProgress(studentId);
     }
 
-    private ProgressResponse computeProgress(Long studentId) {
+    public ProgressResponse computeProgress(Long studentId) {
         // ── Batches ──────────────────────────────────────────────────────────
         List<Batch> batches = batchRepository.findByStudentId(studentId);
         List<Long> batchIds = batches.stream().map(Batch::getId).toList();
