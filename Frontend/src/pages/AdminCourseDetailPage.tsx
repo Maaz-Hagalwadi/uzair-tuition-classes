@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { ADMIN_NAV } from '../lib/adminNav';
 import api, { apiGet } from '../lib/api';
 import { COURSE_STATUS_META } from '../lib/statusMeta';
@@ -126,10 +127,7 @@ export default function AdminCourseDetailPage() {
   if (courseLoading) {
     return (
       <DashboardShell navItems={ADMIN_NAV}>
-        <div className="flex items-center justify-center py-32 text-[#787680]">
-          <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-          Loading…
-        </div>
+        <LogoSpinner message="Loading…" py="py-32" />
       </DashboardShell>
     );
   }
@@ -495,10 +493,7 @@ export default function AdminCourseDetailPage() {
 
           {/* Materials list */}
           {matsLoading ? (
-            <div className="flex items-center justify-center py-12 text-[#787680]">
-              <span className="material-symbols-outlined text-[20px] animate-spin mr-2">sync</span>
-              Loading materials…
-            </div>
+            <LogoSpinner message="Loading materials…" py="py-12" />
           ) : materials.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <span

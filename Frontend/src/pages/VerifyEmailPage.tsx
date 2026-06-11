@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
 import AuthLeftPanel from '../components/AuthLeftPanel';
+import LogoSpinner from '../components/LogoSpinner';
 
 export default function VerifyEmailPage() {
   const [params] = useSearchParams();
@@ -34,10 +35,7 @@ export default function VerifyEmailPage() {
       <section className="w-full lg:w-1/2 flex items-center justify-center bg-[#faf8ff] px-6 md:px-12 lg:px-24">
         <div className="w-full max-w-md text-center">
           {status === 'loading' && (
-            <>
-              <div className="w-20 h-20 rounded-full border-4 border-[#eaedff] border-t-[#070235] animate-spin mx-auto mb-6" />
-              <p className="text-sm text-[#505f76]">Verifying your email…</p>
-            </>
+            <LogoSpinner message="Verifying your email…" py="py-8" />
           )}
 
           {status === 'success' && (

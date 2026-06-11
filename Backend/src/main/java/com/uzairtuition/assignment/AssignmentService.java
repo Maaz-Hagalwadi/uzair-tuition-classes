@@ -3,6 +3,8 @@ package com.uzairtuition.assignment;
 import com.uzairtuition.assignment.dto.*;
 import com.uzairtuition.batch.Batch;
 import com.uzairtuition.batch.BatchRepository;
+import com.uzairtuition.batch.BatchStudentRepository;
+import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
 import com.uzairtuition.util.EntityFinder;
@@ -27,6 +29,8 @@ public class AssignmentService {
     private final AssignmentSubmissionRepository submissionRepository;
     private final BatchRepository batchRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
+    private final BatchStudentRepository batchStudentRepository;
 
     // -------------------------------------------------------------------------
     // Teacher methods
@@ -57,6 +61,14 @@ public class AssignmentService {
                 .build();
 
         assignment = assignmentRepository.save(assignment);
+        String finalTitle = assignment.getTitle();
+        Long assignmentId = assignment.getId();
+        String dueDateStr = assignment.getDueDate() != null ? assignment.getDueDate().toLocalDate().toString() : "No deadline";
+        batchStudentRepository.findByBatchIdOrderByEnrolledAtDesc(req.batchId()).forEach(bs ->
+            notificationService.createForUser(bs.getStudent(), "ASSIGNMENT_CREATED",
+                    "New Assignment: " + finalTitle,
+                    "A new assignment has been posted in " + batch.getName() + ". Due: " + dueDateStr,
+                    assignmentId));
         return AssignmentResponse.from(assignment, 0, null);
     }
 
@@ -96,7 +108,14 @@ public class AssignmentService {
         submission.setFeedback(req.feedback());
         submission.setGradedAt(LocalDateTime.now());
         submission.setGradedBy(teacher);
-        return SubmissionResponse.from(submissionRepository.save(submission));
+        AssignmentSubmission saved = submissionRepository.save(submission);
+        String assignmentTitle = saved.getAssignment().getTitle();
+        notificationService.createForUser(saved.getStudent(), "ASSIGNMENT_GRADED",
+                "Assignment Graded: " + assignmentTitle,
+                "Your submission for \"" + assignmentTitle + "\" has been graded. " +
+                "Marks: " + saved.getMarksObtained() + "/" + saved.getAssignment().getMaxMarks(),
+                saved.getAssignment().getId());
+        return SubmissionResponse.from(saved);
     }
 
     @Transactional

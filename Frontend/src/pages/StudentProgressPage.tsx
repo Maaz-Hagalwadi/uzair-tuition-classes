@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { STUDENT_NAV } from '../lib/studentNav';
 import { apiGet } from '../lib/api';
 
@@ -16,6 +17,7 @@ interface BatchProgress {
 }
 
 interface ProgressResponse {
+  overallCompletionPct: number;
   overallAttendancePct: number;
   totalSessionsAttended: number;
   totalSessions: number;
@@ -140,16 +142,32 @@ export default function StudentProgressPage() {
         </div>
 
         {/* ── Loading ── */}
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center py-24 text-[#94a3b8]">
-            <span className="material-symbols-outlined text-[28px] animate-spin mb-2">sync</span>
-            <p className="text-[13px]">Loading your progress…</p>
-          </div>
-        )}
+        {isLoading && <LogoSpinner message="Loading your progress…" />}
 
         {/* ── Data ── */}
         {!isLoading && data && (
           <>
+            {/* ── Overall completion hero ── */}
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <p className="text-[11px] font-semibold text-[#94a3b8] uppercase tracking-wide mb-1">Overall Completion</p>
+                <div className="flex items-end gap-2 mb-3">
+                  <span className="text-[42px] font-black leading-none" style={{ color: pctColors(data.overallCompletionPct).text }}>
+                    {data.overallCompletionPct}%
+                  </span>
+                  <span className="text-[12px] text-[#94a3b8] mb-1.5">
+                    weighted across attendance, assignments & quizzes
+                  </span>
+                </div>
+                <div className="h-2 bg-[#f1f5f9] rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${data.overallCompletionPct}%`, backgroundColor: pctColors(data.overallCompletionPct).bar }}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* ── 4 summary stat cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Overall attendance */}
@@ -222,6 +240,12 @@ export default function StudentProgressPage() {
                     const initials = batchInitials(batch.batchName);
                     const attColors = pctColors(batch.attendancePct);
                     const quizColors = pctColors(batch.avgScore);
+                    const batchAssignPct = batch.assignmentsTotal > 0
+                      ? Math.round(batch.assignmentsSubmitted * 100 / batch.assignmentsTotal)
+                      : 0;
+                    const batchCompletionPct = Math.round(
+                      batch.attendancePct * 0.4 + batchAssignPct * 0.4 + batch.avgScore * 0.2
+                    );
 
                     return (
                       <div
@@ -284,15 +308,36 @@ export default function StudentProgressPage() {
                           </div>
                         )}
 
-                        {/* Assignments stat row */}
+                        {/* Assignments + certificate row */}
                         <div className="flex items-center gap-3 pt-1 border-t border-[#f1f5f9]">
                           <span className="material-symbols-outlined text-[14px] text-[#6366f1]">
                             assignment_turned_in
                           </span>
-                          <span className="text-[12px] text-[#374151]">
+                          <span className="text-[12px] text-[#374151] flex-1">
                             <span className="font-semibold">{batch.assignmentsSubmitted}</span>
                             <span className="text-[#94a3b8]"> / {batch.assignmentsTotal} assignments submitted</span>
                           </span>
+                          {batchCompletionPct >= 95 ? (
+                            <a
+                              href={`/api/student/batches/${batch.batchId}/certificate`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2.5 py-1 bg-[#fefce8] text-[#a16207] rounded-lg text-[10px] font-semibold hover:bg-[#fef9c3] transition-colors shrink-0"
+                            >
+                              <span className="material-symbols-outlined text-[11px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                workspace_premium
+                              </span>
+                              Certificate
+                            </a>
+                          ) : (
+                            <div
+                              title={`Certificate unlocks at 95% completion (currently ${batchCompletionPct}%)`}
+                              className="flex items-center gap-1 px-2.5 py-1 bg-[#f1f5f9] text-[#94a3b8] rounded-lg text-[10px] font-semibold cursor-not-allowed shrink-0"
+                            >
+                              <span className="material-symbols-outlined text-[11px]">lock</span>
+                              Certificate
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

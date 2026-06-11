@@ -3,6 +3,7 @@ package com.uzairtuition.quiz;
 import com.uzairtuition.batch.Batch;
 import com.uzairtuition.batch.BatchRepository;
 import com.uzairtuition.batch.BatchStudentRepository;
+import com.uzairtuition.notification.NotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
 import com.uzairtuition.util.EntityFinder;
@@ -28,6 +29,7 @@ public class QuizService {
     private final QuizAnswerRepository quizAnswerRepository;
     private final BatchRepository batchRepository;
     private final BatchStudentRepository batchStudentRepository;
+    private final NotificationService notificationService;
     private final UserRepository userRepository;
 
     // -------------------------------------------------------------------------
@@ -89,6 +91,15 @@ public class QuizService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status.");
         }
         Quiz quiz = EntityFinder.findOrThrow(quizRepository.findById(id), "Quiz");
+        if ("PUBLISHED".equals(status) && !"PUBLISHED".equals(quiz.getStatus())) {
+            Long quizId = quiz.getId();
+            String quizTitle = quiz.getTitle();
+            batchStudentRepository.findByBatchIdOrderByEnrolledAtDesc(quiz.getBatch().getId()).forEach(bs ->
+                notificationService.createForUser(bs.getStudent(), "QUIZ_PUBLISHED",
+                        "New Quiz Available: " + quizTitle,
+                        quizTitle + " is now available in " + quiz.getBatch().getName(),
+                        quizId));
+        }
         quiz.setStatus(status);
         int count = quizQuestionRepository.findByQuizIdOrderByOrderIndexAsc(id).size();
         return QuizSummaryResponse.from(quizRepository.save(quiz), count);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell, { type NavItem } from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { useAuthStore } from '../stores/authStore';
 import { ADMIN_NAV } from '../lib/adminNav';
 import { TEACHER_NAV } from '../lib/teacherNav';
@@ -158,10 +159,7 @@ export default function ProfilePage() {
   if (isLoading || !profile) {
     return (
       <DashboardShell navItems={nav}>
-        <div className="flex items-center justify-center py-32 text-[#787680]">
-          <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-          Loading profile…
-        </div>
+        <LogoSpinner message="Loading profile…" py="py-32" />
       </DashboardShell>
     );
   }

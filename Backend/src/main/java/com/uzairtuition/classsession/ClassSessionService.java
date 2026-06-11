@@ -10,7 +10,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -77,6 +81,38 @@ public class ClassSessionService {
                 });
 
         return response;
+    }
+
+    @Transactional
+    public List<ClassSessionResponse> createBulk(Long batchId, BulkSessionRequest req, String creatorEmail) {
+        var batch = EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
+        var creator = EntityFinder.findOrThrow(userRepository.findByEmail(creatorEmail), "User");
+        if (req.endDate().isBefore(req.startDate()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be after start date.");
+
+        List<ClassSessionResponse> created = new ArrayList<>();
+        LocalDate current = req.startDate();
+        while (!current.isAfter(req.endDate())) {
+            if (req.daysOfWeek().contains(current.getDayOfWeek().getValue())) {
+                ClassSession session = ClassSession.builder()
+                        .batch(batch).title(req.title().trim())
+                        .sessionDate(current).startTime(req.startTime()).endTime(req.endTime())
+                        .meetingUrl(req.meetingUrl()).meetingPlatform(req.meetingPlatform())
+                        .createdBy(creator).build();
+                created.add(ClassSessionResponse.from(sessionRepository.save(session)));
+            }
+            current = current.plusDays(1);
+        }
+
+        if (!created.isEmpty()) {
+            int count = created.size();
+            batchStudentRepository.findByBatchIdOrderByEnrolledAtDesc(batchId).forEach(bs ->
+                notificationService.createForUser(bs.getStudent(), "NEW_SESSION",
+                        count + " New Session" + (count > 1 ? "s" : "") + " Scheduled",
+                        req.title().trim() + " — " + count + " session" + (count > 1 ? "s" : "") +
+                        " from " + req.startDate() + " to " + req.endDate(), null));
+        }
+        return created;
     }
 
     @Transactional

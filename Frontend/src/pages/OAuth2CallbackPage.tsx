@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import LogoSpinner from '../components/LogoSpinner';
 
 export default function OAuth2CallbackPage() {
   const [params] = useSearchParams();
@@ -26,12 +27,5 @@ export default function OAuth2CallbackPage() {
     else                          navigate('/student');
   }, []);
 
-  return (
-    <div className="flex items-center justify-center h-screen bg-[#faf8ff]">
-      <div className="flex flex-col items-center gap-3 text-[#505f76]">
-        <span className="material-symbols-outlined text-[40px] animate-spin text-[#070235]">sync</span>
-        <p className="text-sm">Signing you in…</p>
-      </div>
-    </div>
-  );
+  return <LogoSpinner message="Signing you in…" fullScreen />;
 }

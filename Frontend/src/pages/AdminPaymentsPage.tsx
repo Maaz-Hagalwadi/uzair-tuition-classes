@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { ADMIN_NAV } from '../lib/adminNav';
 import api, { apiGet } from '../lib/api';
 import { PAYMENT_STATUS_META } from '../lib/statusMeta';
@@ -250,9 +251,7 @@ export default function AdminPaymentsPage() {
 
         {/* Table / Cards */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-[#6b7280]">
-            <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>Loading…
-          </div>
+          <LogoSpinner message="Loading…" py="py-20" />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-[#9ca3af]">
             <span className="material-symbols-outlined text-[48px] mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>

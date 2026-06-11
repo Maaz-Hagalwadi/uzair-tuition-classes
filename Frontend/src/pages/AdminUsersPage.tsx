@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
+import StudentProgressModal from '../components/StudentProgressModal';
 import { ADMIN_NAV } from '../lib/adminNav';
 import api from '../lib/api';
 
@@ -116,6 +118,7 @@ export default function AdminUsersPage() {
   const [tab, setTab]           = useState<Tab>('TEACHER');
   const [search, setSearch]     = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [progressStudent, setProgressStudent] = useState<{ id: number; name: string } | null>(null);
   const qc = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery<UserRecord[]>({
@@ -232,10 +235,7 @@ export default function AdminUsersPage() {
           {/* ── Desktop table (sm+) ── */}
           <div className="hidden sm:block">
             {isLoading ? (
-              <div className="flex items-center justify-center py-20 text-[#94a3b8]">
-                <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-                <span className="text-[13px]">Loading users…</span>
-              </div>
+              <LogoSpinner message="Loading users…" py="py-20" />
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-[#94a3b8]">
                 <span className="material-symbols-outlined text-[40px] mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>person_off</span>
@@ -298,6 +298,16 @@ export default function AdminUsersPage() {
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center justify-end gap-1">
+                            {tab === 'STUDENT' && (
+                              <button
+                                onClick={() => setProgressStudent({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-[#eef2ff] text-[#6366f1] rounded-lg text-[11px] font-semibold hover:bg-[#e0e7ff] transition-colors"
+                                title="View Progress"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">trending_up</span>
+                                Progress
+                              </button>
+                            )}
                             {user.active ? (
                               <button onClick={() => deactivate.mutate(user.id)} disabled={isBusy} title="Deactivate"
                                 className="p-1.5 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-all disabled:opacity-40">
@@ -329,10 +339,7 @@ export default function AdminUsersPage() {
           {/* ── Mobile cards (< sm) ── */}
           <div className="sm:hidden">
             {isLoading ? (
-              <div className="flex items-center justify-center py-16 text-[#94a3b8]">
-                <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-                <span className="text-[13px]">Loading users…</span>
-              </div>
+              <LogoSpinner message="Loading users…" py="py-16" />
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
                 <span className="material-symbols-outlined text-[40px] mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>person_off</span>
@@ -362,17 +369,28 @@ export default function AdminUsersPage() {
                             <p className="text-[10px] text-[#6b7280] mt-0.5">{user.email}</p>
                           </div>
                         </div>
-                        {user.active ? (
-                          <button onClick={() => deactivate.mutate(user.id)} disabled={isBusy}
-                            className="p-1.5 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-all disabled:opacity-40 shrink-0">
-                            <span className="material-symbols-outlined text-[16px]">block</span>
-                          </button>
-                        ) : (
-                          <button onClick={() => activate.mutate(user.id)} disabled={isBusy}
-                            className="p-1.5 rounded-lg text-[#9ca3af] hover:text-[#16a34a] hover:bg-[#f0fdf4] transition-all disabled:opacity-40 shrink-0">
-                            <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {tab === 'STUDENT' && (
+                            <button
+                              onClick={() => setProgressStudent({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
+                              className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#eef2ff] text-[#6366f1] hover:bg-[#e0e7ff] transition-colors"
+                              title="View Progress"
+                            >
+                              <span className="material-symbols-outlined text-[15px]">trending_up</span>
+                            </button>
+                          )}
+                          {user.active ? (
+                            <button onClick={() => deactivate.mutate(user.id)} disabled={isBusy}
+                              className="p-1.5 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-all disabled:opacity-40">
+                              <span className="material-symbols-outlined text-[16px]">block</span>
+                            </button>
+                          ) : (
+                            <button onClick={() => activate.mutate(user.id)} disabled={isBusy}
+                              className="p-1.5 rounded-lg text-[#9ca3af] hover:text-[#16a34a] hover:bg-[#f0fdf4] transition-all disabled:opacity-40">
+                              <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Role + Status + Joined */}
@@ -412,6 +430,15 @@ export default function AdminUsersPage() {
 
       {showCreate && (
         <CreateUserModal role={tab} onClose={() => setShowCreate(false)} onSuccess={invalidate} />
+      )}
+
+      {progressStudent && (
+        <StudentProgressModal
+          studentId={progressStudent.id}
+          studentName={progressStudent.name}
+          role="admin"
+          onClose={() => setProgressStudent(null)}
+        />
       )}
     </DashboardShell>
   );

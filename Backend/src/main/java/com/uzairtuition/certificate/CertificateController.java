@@ -1,8 +1,17 @@
 package com.uzairtuition.certificate;
 
+import com.uzairtuition.assignment.Assignment;
+import com.uzairtuition.assignment.AssignmentRepository;
+import com.uzairtuition.assignment.AssignmentSubmission;
+import com.uzairtuition.assignment.AssignmentSubmissionRepository;
+import com.uzairtuition.attendance.Attendance;
+import com.uzairtuition.attendance.AttendanceRepository;
 import com.uzairtuition.batch.Batch;
 import com.uzairtuition.batch.BatchRepository;
 import com.uzairtuition.batch.BatchStudentRepository;
+import com.uzairtuition.classsession.ClassSessionRepository;
+import com.uzairtuition.quiz.QuizAttempt;
+import com.uzairtuition.quiz.QuizAttemptRepository;
 import com.uzairtuition.user.User;
 import com.uzairtuition.user.UserRepository;
 import com.uzairtuition.util.EntityFinder;
@@ -19,6 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +37,11 @@ public class CertificateController {
     private final BatchRepository batchRepository;
     private final BatchStudentRepository batchStudentRepository;
     private final UserRepository userRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final ClassSessionRepository classSessionRepository;
+    private final AssignmentRepository assignmentRepository;
+    private final AssignmentSubmissionRepository assignmentSubmissionRepository;
+    private final QuizAttemptRepository quizAttemptRepository;
 
     @GetMapping("/api/admin/batches/{batchId}/students/{studentId}/certificate")
     @PreAuthorize("hasRole('ADMIN')")
@@ -54,6 +69,78 @@ public class CertificateController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE + ";charset=UTF-8")
                 .body(html);
+    }
+
+    @GetMapping("/api/student/batches/{batchId}/certificate")
+    @PreAuthorize("hasRole('STUDENT')")
+    @Transactional(readOnly = true)
+    public ResponseEntity<String> getOwnCertificate(
+            @PathVariable Long batchId,
+            Principal principal) {
+
+        User student = EntityFinder.findOrThrow(userRepository.findByEmail(principal.getName()), "Student");
+        Long studentId = student.getId();
+
+        if (!batchStudentRepository.existsByBatchIdAndStudentId(batchId, studentId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not enrolled in this batch.");
+        }
+
+        int completionPct = computeBatchCompletionPct(studentId, batchId);
+        if (completionPct < 95) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Certificate requires 95% course completion. Your current progress: " + completionPct + "%");
+        }
+
+        Batch batch = EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
+        String courseName   = batch.getCourse().getTitle();
+        String studentName  = student.getFirstName() + " " + student.getLastName();
+        String batchName    = batch.getName();
+        String completionDate = (batch.getEndDate() != null ? batch.getEndDate() : LocalDate.now())
+                .format(DateTimeFormatter.ofPattern("MMMM d, yyyy"));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE + ";charset=UTF-8")
+                .body(buildHtml(studentName, courseName, batchName, completionDate));
+    }
+
+    private int computeBatchCompletionPct(Long studentId, Long batchId) {
+        // Attendance component
+        List<Attendance> attendance = attendanceRepository.findByStudentIdAndBatchId(studentId, batchId);
+        int totalSessions = classSessionRepository.findByBatchIdOrderBySessionDateDesc(batchId).size();
+        long attended = attendance.stream()
+                .filter(a -> "PRESENT".equals(a.getStatus()) || "LATE".equals(a.getStatus()))
+                .count();
+        int attPct = totalSessions > 0 ? (int) Math.round(attended * 100.0 / totalSessions) : 0;
+
+        // Assignment submission component
+        List<Assignment> assignments = assignmentRepository.findByBatchIdOrderByCreatedAtDesc(batchId);
+        int totalAssignments = assignments.size();
+        List<Long> assignmentIds = assignments.stream().map(Assignment::getId).toList();
+        long submitted = assignmentSubmissionRepository
+                .findByStudentIdAndAssignment_BatchIdIn(studentId, List.of(batchId)).stream()
+                .filter(s -> assignmentIds.contains(s.getAssignment().getId()))
+                .count();
+        int assignPct = totalAssignments > 0 ? (int) Math.round(submitted * 100.0 / totalAssignments) : 0;
+
+        // Quiz average component
+        List<QuizAttempt> attempts = quizAttemptRepository.findByStudentIdOrderByStartedAtDesc(studentId).stream()
+                .filter(a -> ("SUBMITTED".equals(a.getStatus()) || "COMPLETED".equals(a.getStatus()))
+                        && a.getQuiz().getBatch().getId().equals(batchId))
+                .toList();
+        int quizPct = 0;
+        if (!attempts.isEmpty()) {
+            List<QuizAttempt> scored = attempts.stream()
+                    .filter(a -> a.getScore() != null && a.getTotalMarks() != null && a.getTotalMarks() > 0)
+                    .toList();
+            if (!scored.isEmpty()) {
+                double avg = scored.stream()
+                        .mapToDouble(a -> a.getScore() * 100.0 / a.getTotalMarks())
+                        .average().orElse(0);
+                quizPct = (int) Math.round(avg);
+            }
+        }
+
+        return (int) Math.round(attPct * 0.4 + assignPct * 0.4 + quizPct * 0.2);
     }
 
     private String buildHtml(String studentName, String courseName,
@@ -127,7 +214,7 @@ public class CertificateController {
                "      <div class=\"seal\"><span>UTC<br/>CERT</span></div>" +
                "    </div>" +
                "    <div class=\"meta-item\">" +
-               "      <div class=\"meta-val\">Uzair Ahmed</div>" +
+               "      <div class=\"meta-val\">Uzair Davalji</div>" +
                "      <div class=\"meta-lbl\">Director, Uzair Tuition Classes</div>" +
                "    </div>" +
                "  </div>" +

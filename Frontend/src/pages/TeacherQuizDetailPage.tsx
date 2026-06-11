@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { TEACHER_NAV } from '../lib/teacherNav';
 import api, { apiGet } from '../lib/api';
 import { QUIZ_STATUS_META } from '../lib/statusMeta';
@@ -167,9 +168,7 @@ export default function TeacherQuizDetailPage() {
   if (isLoading || !detail) {
     return (
       <DashboardShell navItems={TEACHER_NAV}>
-        <div className="flex items-center justify-center py-32 text-[#6b7280]">
-          <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>Loading…
-        </div>
+        <LogoSpinner message="Loading…" py="py-32" />
       </DashboardShell>
     );
   }

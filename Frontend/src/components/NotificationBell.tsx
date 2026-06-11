@@ -22,6 +22,9 @@ const TYPE_META: Record<string, { icon: string; color: string; bg: string }> = {
   NEW_SESSION:         { icon: 'calendar_month',   color: '#2563eb', bg: '#eff6ff' },
   PAYMENT_UPDATED:     { icon: 'payments',         color: '#d97706', bg: '#fffbeb' },
   NEW_LEAD:            { icon: 'contact_phone',    color: '#0f172a', bg: '#f1f5f9' },
+  ASSIGNMENT_CREATED:  { icon: 'assignment',       color: '#7c3aed', bg: '#f5f3ff' },
+  ASSIGNMENT_GRADED:   { icon: 'grading',          color: '#0891b2', bg: '#ecfeff' },
+  QUIZ_PUBLISHED:      { icon: 'quiz',             color: '#16a34a', bg: '#f0fdf4' },
 };
 
 function timeAgo(iso: string) {
@@ -44,6 +47,9 @@ function getNotificationLink(type: string, role: string): string {
     case 'NEW_SESSION':         return r === 'student' ? '/student/schedule' : `/${r}/batches`;
     case 'PAYMENT_UPDATED':     return r === 'student' ? '/student/payments' : '/admin/payments';
     case 'NEW_LEAD':            return '/admin/leads';
+    case 'ASSIGNMENT_CREATED':  return r === 'student' ? '/student/assignments' : `/${r}/assignments`;
+    case 'ASSIGNMENT_GRADED':   return '/student/assignments';
+    case 'QUIZ_PUBLISHED':      return r === 'student' ? '/student/quizzes' : `/${r}/quizzes`;
     default:                    return `/${r}`;
   }
 }
@@ -91,14 +97,6 @@ export default function NotificationBell() {
     }
     if (open) document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
-  }, [open]);
-
-  // Auto-mark all read when the panel is opened
-  useEffect(() => {
-    if (open && (countData?.count ?? 0) > 0) {
-      markAllRead.mutate();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const unread = countData?.count ?? 0;

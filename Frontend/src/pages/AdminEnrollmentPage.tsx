@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { ADMIN_NAV } from '../lib/adminNav';
 import api, { apiGet } from '../lib/api';
 
@@ -122,10 +123,7 @@ export default function AdminEnrollmentPage() {
         {/* Mobile cards (sm:hidden) */}
         <div className="sm:hidden space-y-3">
           {isLoading ? (
-            <div className="text-center py-12 text-[#94a3b8]">
-              <span className="material-symbols-outlined text-[24px] animate-spin block mx-auto mb-2">sync</span>
-              Loading…
-            </div>
+            <LogoSpinner message="Loading…" py="py-12" />
           ) : requests.length === 0 ? (
             <div className="text-center py-12 text-[#94a3b8]">
               <span className="material-symbols-outlined text-[36px] block mx-auto mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>inbox</span>
@@ -214,8 +212,7 @@ export default function AdminEnrollmentPage() {
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-[#94a3b8]">
-                    <span className="material-symbols-outlined text-[24px] animate-spin block mx-auto mb-2">sync</span>
-                    Loading…
+                    <LogoSpinner message="Loading…" py="py-4" />
                   </td>
                 </tr>
               ) : requests.length === 0 ? (

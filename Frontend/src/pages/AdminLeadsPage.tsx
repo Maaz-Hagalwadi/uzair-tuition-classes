@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { ADMIN_NAV } from '../lib/adminNav';
 import api, { apiGet } from '../lib/api';
 import { LEAD_STATUS_META } from '../lib/statusMeta';
@@ -153,10 +154,7 @@ export default function AdminLeadsPage() {
         {/* ── Desktop table (sm+) ── */}
         <div className="hidden sm:block bg-white border border-[#c8c5d0] rounded-xl overflow-hidden">
           {isLoading ? (
-            <div className="flex items-center justify-center py-20 text-[#787680]">
-              <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-              Loading leads…
-            </div>
+            <LogoSpinner message="Loading leads…" py="py-20" />
           ) : isError ? (
             <div className="flex items-center justify-center py-20 text-[#93000a]">
               <span className="material-symbols-outlined text-[24px] mr-2">error</span>
@@ -241,10 +239,7 @@ export default function AdminLeadsPage() {
         {/* ── Mobile cards (< sm) ── */}
         <div className="sm:hidden space-y-3">
           {isLoading ? (
-            <div className="bg-white border border-[#c8c5d0] rounded-xl flex items-center justify-center py-16 text-[#787680]">
-              <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-              Loading leads…
-            </div>
+            <LogoSpinner message="Loading leads…" py="py-16" />
           ) : isError ? (
             <div className="bg-white border border-[#c8c5d0] rounded-xl flex items-center justify-center py-16 text-[#93000a]">
               <span className="material-symbols-outlined text-[24px] mr-2">error</span>

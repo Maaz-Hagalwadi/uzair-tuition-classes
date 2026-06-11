@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
+import StudentProgressModal from '../components/StudentProgressModal';
 import { TEACHER_NAV } from '../lib/teacherNav';
 import { apiGet } from '../lib/api';
 
@@ -37,6 +39,7 @@ const GRADIENTS = [
 export default function TeacherStudentsPage() {
   const [search, setSearch] = useState('');
   const [batchFilter, setBatchFilter] = useState<number | 'ALL'>('ALL');
+  const [progressStudent, setProgressStudent] = useState<{ id: number; name: string } | null>(null);
 
   const { data: batches = [], isLoading: batchesLoading } = useQuery<Batch[]>({
     queryKey: ['teacher-batches'],
@@ -125,10 +128,7 @@ export default function TeacherStudentsPage() {
 
         {/* Content */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
-            <span className="material-symbols-outlined text-[24px] animate-spin mb-2">sync</span>
-            <p className="text-[13px]">Loading students…</p>
-          </div>
+          <LogoSpinner message="Loading students…" py="py-16" />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
             <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>person_search</span>
@@ -168,6 +168,12 @@ export default function TeacherStudentsPage() {
                         )}
                       </div>
                     </div>
+                    <button
+                      onClick={() => setProgressStudent({ id: row.studentId, name: `${row.firstName} ${row.lastName}` })}
+                      className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#eef2ff] text-[#6366f1] hover:bg-[#e0e7ff] transition-colors shrink-0"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">trending_up</span>
+                    </button>
                   </div>
                 );
               })}
@@ -181,6 +187,7 @@ export default function TeacherStudentsPage() {
                   <th className="text-left px-4 py-3 font-semibold">Batch</th>
                   <th className="text-left px-4 py-3 font-semibold hidden sm:table-cell">Phone</th>
                   <th className="text-left px-4 py-3 font-semibold hidden md:table-cell">Enrolled</th>
+                  <th className="text-left px-4 py-3 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f1f5f9]">
@@ -198,6 +205,15 @@ export default function TeacherStudentsPage() {
                     <td className="px-4 py-3.5 text-[12px] text-[#94a3b8] hidden md:table-cell">
                       {new Date(row.enrolledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
+                    <td className="px-4 py-3.5">
+                      <button
+                        onClick={() => setProgressStudent({ id: row.studentId, name: `${row.firstName} ${row.lastName}` })}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-[#eef2ff] text-[#6366f1] rounded-lg text-[11px] font-semibold hover:bg-[#e0e7ff] transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">trending_up</span>
+                        Progress
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -205,6 +221,15 @@ export default function TeacherStudentsPage() {
           </div>
         )}
       </div>
+
+      {progressStudent && (
+        <StudentProgressModal
+          studentId={progressStudent.id}
+          studentName={progressStudent.name}
+          role="teacher"
+          onClose={() => setProgressStudent(null)}
+        />
+      )}
     </DashboardShell>
   );
 }

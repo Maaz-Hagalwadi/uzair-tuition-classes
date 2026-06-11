@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell, { type NavItem } from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { useAuthStore } from '../stores/authStore';
 import { ADMIN_NAV } from '../lib/adminNav';
 import { TEACHER_NAV } from '../lib/teacherNav';
@@ -94,10 +95,7 @@ export default function NotificationsPage() {
         {/* List */}
         <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-[#94a3b8]">
-              <span className="material-symbols-outlined text-[28px] animate-spin mb-2">sync</span>
-              <p className="text-[13px]">Loading notifications…</p>
-            </div>
+            <LogoSpinner message="Loading notifications…" py="py-20" />
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#94a3b8]">
               <div className="w-14 h-14 rounded-2xl bg-[#f1f5f9] flex items-center justify-center mb-3">

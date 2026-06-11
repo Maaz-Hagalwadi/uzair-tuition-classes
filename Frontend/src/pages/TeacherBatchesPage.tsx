@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { TEACHER_NAV } from '../lib/teacherNav';
 import { apiGet } from '../lib/api';
 import { BATCH_STATUS_INLINE_META } from '../lib/statusMeta';
@@ -90,10 +91,7 @@ export default function TeacherBatchesPage() {
         {/* Content */}
         <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
-              <span className="material-symbols-outlined text-[24px] animate-spin mb-2">sync</span>
-              <p className="text-[13px]">Loading batches…</p>
-            </div>
+            <LogoSpinner message="Loading batches…" py="py-16" />
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
               <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>

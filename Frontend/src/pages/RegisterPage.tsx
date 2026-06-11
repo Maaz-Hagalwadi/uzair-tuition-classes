@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import AuthLeftPanel from '../components/AuthLeftPanel';
-import Logo, { LogoMark } from '../components/Logo';
+import Logo from '../components/Logo';
+import LogoSpinner from '../components/LogoSpinner';
 
 type Role = 'STUDENT' | 'TEACHER';
 
@@ -168,17 +169,7 @@ export default function RegisterPage() {
     }
   };
 
-  if (googleLoading) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#faf8ff] gap-6">
-        <div className="relative flex items-center justify-center">
-          <div className="w-20 h-20 rounded-2xl border-4 border-[#e4e2e6] border-t-[#070235] animate-spin absolute" />
-          <LogoMark size={44} />
-        </div>
-        <p className="text-sm text-[#505f76] font-medium">Redirecting to Google…</p>
-      </div>
-    );
-  }
+  if (googleLoading) return <LogoSpinner message="Redirecting to Google…" fullScreen />;
 
   if (success) {
     return (

@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuthStore } from '../stores/authStore';
 import AuthLeftPanel from '../components/AuthLeftPanel';
-import Logo, { LogoMark } from '../components/Logo';
+import Logo from '../components/Logo';
+import LogoSpinner from '../components/LogoSpinner';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESEND_COOLDOWN = 60;
@@ -187,18 +188,7 @@ export default function LoginPage() {
     }
   };
 
-  // ── Google loading overlay ────────────────────────────────────────────────
-  if (googleLoading) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#faf8ff] gap-6">
-        <div className="relative flex items-center justify-center">
-          <div className="w-20 h-20 rounded-2xl border-4 border-[#e4e2e6] border-t-[#070235] animate-spin absolute" />
-          <LogoMark size={44} />
-        </div>
-        <p className="text-sm text-[#505f76] font-medium">Redirecting to Google…</p>
-      </div>
-    );
-  }
+  if (googleLoading) return <LogoSpinner message="Redirecting to Google…" fullScreen />;
 
   return (
     <main className="flex w-full h-screen overflow-hidden">

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { STUDENT_NAV } from '../lib/studentNav';
 import { apiGet } from '../lib/api';
 import { BATCH_BROWSE_STATUS_META } from '../lib/statusMeta';
@@ -199,10 +200,7 @@ export default function StudentCoursesPage() {
 
           {/* Content */}
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-[#94a3b8]">
-              <span className="material-symbols-outlined text-[28px] animate-spin mb-2">sync</span>
-              <p className="text-[13px]">Loading your courses…</p>
-            </div>
+            <LogoSpinner message="Loading your courses…" py="py-20" />
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#94a3b8]">
               <div className="w-14 h-14 rounded-2xl bg-[#f1f5f9] flex items-center justify-center mb-3">

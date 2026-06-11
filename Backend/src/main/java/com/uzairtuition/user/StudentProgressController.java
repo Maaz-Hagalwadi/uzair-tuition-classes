@@ -8,6 +8,7 @@ import com.uzairtuition.attendance.Attendance;
 import com.uzairtuition.attendance.AttendanceRepository;
 import com.uzairtuition.batch.Batch;
 import com.uzairtuition.batch.BatchRepository;
+import com.uzairtuition.batch.BatchStudentRepository;
 import com.uzairtuition.classsession.ClassSessionRepository;
 import com.uzairtuition.payment.Payment;
 import com.uzairtuition.payment.PaymentRepository;
@@ -15,10 +16,13 @@ import com.uzairtuition.quiz.QuizAttempt;
 import com.uzairtuition.quiz.QuizAttemptRepository;
 import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -33,6 +37,7 @@ public class StudentProgressController {
 
     private final UserRepository userRepository;
     private final BatchRepository batchRepository;
+    private final BatchStudentRepository batchStudentRepository;
     private final ClassSessionRepository classSessionRepository;
     private final AttendanceRepository attendanceRepository;
     private final QuizAttemptRepository quizAttemptRepository;
@@ -44,11 +49,32 @@ public class StudentProgressController {
     @PreAuthorize("hasRole('STUDENT')")
     @Transactional(readOnly = true)
     public ProgressResponse getProgress(Principal principal) {
+        User student = EntityFinder.findOrThrow(userRepository.findByEmail(principal.getName()), "User");
+        return computeProgress(student.getId());
+    }
 
-        User student = EntityFinder.findOrThrow(
-                userRepository.findByEmail(principal.getName()), "User");
-        Long studentId = student.getId();
+    @GetMapping("/api/teacher/students/{studentId}/progress")
+    @PreAuthorize("hasRole('TEACHER')")
+    @Transactional(readOnly = true)
+    public ProgressResponse getStudentProgressForTeacher(@PathVariable Long studentId, Principal principal) {
+        User teacher = EntityFinder.findOrThrow(userRepository.findByEmail(principal.getName()), "Teacher");
+        List<Long> teacherBatchIds = batchRepository.findByTeacherId(teacher.getId()).stream().map(Batch::getId).toList();
+        boolean hasSharedBatch = batchRepository.findByStudentId(studentId).stream()
+                .anyMatch(b -> teacherBatchIds.contains(b.getId()));
+        if (!hasSharedBatch)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This student is not in any of your batches.");
+        return computeProgress(studentId);
+    }
 
+    @GetMapping("/api/admin/students/{studentId}/progress")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(readOnly = true)
+    public ProgressResponse getStudentProgressForAdmin(@PathVariable Long studentId) {
+        EntityFinder.findOrThrow(userRepository.findById(studentId), "Student");
+        return computeProgress(studentId);
+    }
+
+    private ProgressResponse computeProgress(Long studentId) {
         // ── Batches ──────────────────────────────────────────────────────────
         List<Batch> batches = batchRepository.findByStudentId(studentId);
         List<Long> batchIds = batches.stream().map(Batch::getId).toList();

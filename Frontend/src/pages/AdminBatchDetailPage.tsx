@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { ADMIN_NAV } from '../lib/adminNav';
 import api, { apiGet } from '../lib/api';
 import { BATCH_STATUS_META } from '../lib/statusMeta';
@@ -197,6 +198,195 @@ function SessionModal({
               className="flex items-center gap-2 px-5 py-2.5 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors disabled:opacity-60">
               {saving && <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>}
               {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Session'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function BulkSessionModal({
+  onClose,
+  onSave,
+  saving,
+}: {
+  onClose: () => void;
+  onSave: (data: any) => void;
+  saving: boolean;
+}) {
+  const [title, setTitle] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [meetingUrl, setMeetingUrl] = useState('');
+  const [meetingPlatform, setMeetingPlatform] = useState('GOOGLE_MEET');
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>([]);
+
+  const DAYS = [
+    { label: 'Mon', value: 1 },
+    { label: 'Tue', value: 2 },
+    { label: 'Wed', value: 3 },
+    { label: 'Thu', value: 4 },
+    { label: 'Fri', value: 5 },
+    { label: 'Sat', value: 6 },
+    { label: 'Sun', value: 7 },
+  ];
+
+  const toggleDay = (v: number) => {
+    setDaysOfWeek(prev =>
+      prev.includes(v) ? prev.filter(d => d !== v) : [...prev, v]
+    );
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      title: title.trim(),
+      startDate,
+      endDate,
+      startTime,
+      endTime: endTime || null,
+      meetingUrl: meetingUrl.trim() || null,
+      meetingPlatform,
+      daysOfWeek,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e4e2e6]">
+          <h2 className="font-semibold text-[#131b2e]">Bulk Create Sessions</h2>
+          <button onClick={onClose} className="text-[#787680] hover:text-[#131b2e]">
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-semibold text-[#070235] mb-1.5">Title *</label>
+            <input
+              required type="text" value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. Weekly Class"
+              className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] focus:ring-2 focus:ring-[#070235]/10 transition-all"
+            />
+          </div>
+
+          {/* Date range */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-[#070235] mb-1.5">Start Date *</label>
+              <input
+                required type="date" value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#070235] mb-1.5">End Date *</label>
+              <input
+                required type="date" value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Time range */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-[#070235] mb-1.5">Start Time *</label>
+              <input
+                required type="time" value={startTime}
+                onChange={e => setStartTime(e.target.value)}
+                className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#070235] mb-1.5">
+                End Time <span className="font-normal text-[#787680]">(opt.)</span>
+              </label>
+              <input
+                type="time" value={endTime}
+                onChange={e => setEndTime(e.target.value)}
+                className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Platform */}
+          <div>
+            <label className="block text-sm font-semibold text-[#070235] mb-1.5">Platform</label>
+            <div className="grid grid-cols-4 gap-2">
+              {PLATFORMS.map(p => (
+                <button key={p.value} type="button" onClick={() => setMeetingPlatform(p.value)}
+                  className={`flex flex-col items-center gap-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${
+                    meetingPlatform === p.value
+                      ? 'border-[#070235] bg-[#eaedff] text-[#070235]'
+                      : 'border-[#c8c5d0] text-[#505f76] hover:bg-[#f2f3ff]'
+                  }`}>
+                  <span className="material-symbols-outlined text-[18px]">{p.icon}</span>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Meeting URL */}
+          <div>
+            <label className="block text-sm font-semibold text-[#070235] mb-1.5">
+              Meeting Link <span className="font-normal text-[#787680]">(optional)</span>
+            </label>
+            <input
+              type="url" value={meetingUrl}
+              onChange={e => setMeetingUrl(e.target.value)}
+              placeholder="https://meet.google.com/…"
+              className="block w-full px-4 py-2.5 bg-white border border-[#c8c5d0] rounded-lg text-sm focus:outline-none focus:border-[#070235] focus:ring-2 focus:ring-[#070235]/10 transition-all"
+            />
+          </div>
+
+          {/* Days of week */}
+          <div>
+            <label className="block text-sm font-semibold text-[#070235] mb-1.5">
+              Days of Week *
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              {DAYS.map(d => (
+                <button
+                  key={d.value}
+                  type="button"
+                  onClick={() => toggleDay(d.value)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                    daysOfWeek.includes(d.value)
+                      ? 'border-[#070235] bg-[#070235] text-white'
+                      : 'border-[#c8c5d0] text-[#505f76] hover:bg-[#f2f3ff]'
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+            {daysOfWeek.length === 0 && (
+              <p className="text-[11px] text-[#787680] mt-1">Select at least one day</p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="px-5 py-2.5 border border-[#c8c5d0] text-[#505f76] rounded-lg text-sm font-semibold hover:bg-[#f2f3ff] transition-colors">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving || daysOfWeek.length === 0}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#070235] text-white rounded-lg text-sm font-semibold hover:bg-[#1e1b4b] transition-colors disabled:opacity-60"
+            >
+              {saving && <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>}
+              {saving ? 'Creating…' : 'Create Sessions'}
             </button>
           </div>
         </form>
@@ -428,6 +618,7 @@ export default function AdminBatchDetailPage() {
   const [editForm, setEditForm] = useState<BatchEditForm>({ name: '', teacherId: '', startDate: '', endDate: '', timings: '', maxStudents: '30', status: 'UPCOMING' });
   const [editError, setEditError] = useState('');
   const [bulkEnrollOpen, setBulkEnrollOpen] = useState(false);
+  const [bulkSessionOpen, setBulkSessionOpen] = useState(false);
 
   // Fee structure state
   const [feeForm, setFeeForm] = useState<FeeForm>(EMPTY_FEE_FORM);
@@ -528,6 +719,11 @@ export default function AdminBatchDetailPage() {
     onSuccess: () => { invalidateSessions(); setConfirmModal(null); },
   });
 
+  const bulkSessionMutation = useMutation({
+    mutationFn: (data: any) => api.post(`/admin/batches/${batchId}/sessions/bulk`, data),
+    onSuccess: () => { invalidateSessions(); setBulkSessionOpen(false); },
+  });
+
   const updateBatchMutation = useMutation({
     mutationFn: (form: BatchEditForm) => api.put(`/admin/batches/${batchId}`, {
       name: form.name.trim(),
@@ -598,9 +794,7 @@ export default function AdminBatchDetailPage() {
   if (batchLoading) {
     return (
       <DashboardShell navItems={ADMIN_NAV}>
-        <div className="flex items-center justify-center py-32 text-[#787680]">
-          <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>Loading…
-        </div>
+        <LogoSpinner message="Loading…" py="py-32" />
       </DashboardShell>
     );
   }
@@ -779,9 +973,7 @@ export default function AdminBatchDetailPage() {
             )}
 
             {studentsLoading ? (
-              <div className="flex items-center justify-center py-12 text-[#787680]">
-                <span className="material-symbols-outlined text-[20px] animate-spin mr-2">sync</span>
-              </div>
+              <LogoSpinner message="Loading…" py="py-12" />
             ) : filteredStudents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <span className="material-symbols-outlined text-[40px] text-[#c8c5d0] mb-2"
@@ -867,17 +1059,22 @@ export default function AdminBatchDetailPage() {
                   {sessions.length}
                 </span>
               </h2>
-              <button onClick={() => setSessionModal({ ...EMPTY_SESSION })}
-                className="flex items-center gap-1 px-2 py-1 sm:px-4 sm:py-2 bg-[#070235] text-white rounded-lg text-[10px] sm:text-sm font-semibold hover:bg-[#1e1b4b] transition-colors">
-                <span className="material-symbols-outlined text-[12px] sm:text-[16px]">add</span>
-                Add Session
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setBulkSessionOpen(true)}
+                  className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 border border-[#070235] text-[#070235] rounded-lg text-[10px] sm:text-[12px] font-semibold hover:bg-[#f8f9ff] transition-colors">
+                  <span className="material-symbols-outlined text-[12px] sm:text-[14px]">calendar_add_on</span>
+                  <span className="hidden sm:inline">Bulk Create</span>
+                </button>
+                <button onClick={() => setSessionModal({ ...EMPTY_SESSION })}
+                  className="flex items-center gap-1 px-2 py-1 sm:px-4 sm:py-2 bg-[#070235] text-white rounded-lg text-[10px] sm:text-sm font-semibold hover:bg-[#1e1b4b] transition-colors">
+                  <span className="material-symbols-outlined text-[12px] sm:text-[16px]">add</span>
+                  Add Session
+                </button>
+              </div>
             </div>
 
             {sessionsLoading ? (
-              <div className="flex items-center justify-center py-12 text-[#787680]">
-                <span className="material-symbols-outlined text-[20px] animate-spin mr-2">sync</span>
-              </div>
+              <LogoSpinner message="Loading…" py="py-12" />
             ) : sessions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <span className="material-symbols-outlined text-[48px] text-[#c8c5d0] mb-3"
@@ -1054,9 +1251,7 @@ export default function AdminBatchDetailPage() {
 
             <div className="p-4 sm:p-6">
               {feeLoading ? (
-                <div className="flex items-center justify-center py-12 text-[#787680]">
-                  <span className="material-symbols-outlined text-[20px] animate-spin mr-2">sync</span>
-                </div>
+                <LogoSpinner message="Loading…" py="py-12" />
               ) : !feeStructure && !feeFormOpen ? (
                 /* Empty state */
                 <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -1254,6 +1449,15 @@ export default function AdminBatchDetailPage() {
             onClose={() => setSessionModal(null)}
             onSave={handleSessionSave}
             saving={createSessionMutation.isPending || updateSessionMutation.isPending}
+          />
+        )}
+
+        {/* Bulk Session modal */}
+        {bulkSessionOpen && (
+          <BulkSessionModal
+            onClose={() => setBulkSessionOpen(false)}
+            onSave={(data) => bulkSessionMutation.mutate(data)}
+            saving={bulkSessionMutation.isPending}
           />
         )}
 

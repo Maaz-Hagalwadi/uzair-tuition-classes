@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { ADMIN_NAV } from '../lib/adminNav';
 import api from '../lib/api';
 
@@ -128,8 +129,7 @@ export default function AdminVisitorsPage() {
               {vl ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12 text-[#94a3b8]">
-                    <span className="material-symbols-outlined text-[24px] animate-spin block mx-auto mb-2">sync</span>
-                    Loading…
+                    <LogoSpinner message="Loading…" py="py-4" />
                   </td>
                 </tr>
               ) : visits.length === 0 ? (

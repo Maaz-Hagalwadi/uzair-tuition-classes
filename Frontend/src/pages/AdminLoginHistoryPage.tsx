@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { ADMIN_NAV } from '../lib/adminNav';
 import api from '../lib/api';
 
@@ -112,8 +113,7 @@ export default function AdminLoginHistoryPage() {
               {isLoading ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12 text-[#94a3b8]">
-                    <span className="material-symbols-outlined text-[24px] animate-spin block mx-auto mb-2">sync</span>
-                    Loading…
+                    <LogoSpinner message="Loading…" py="py-4" />
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
@@ -174,10 +174,7 @@ export default function AdminLoginHistoryPage() {
           </div>
 
           {isLoading ? (
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] py-12 flex flex-col items-center gap-2 text-[#94a3b8]">
-              <span className="material-symbols-outlined text-[24px] animate-spin">sync</span>
-              <p className="text-[13px]">Loading…</p>
-            </div>
+            <LogoSpinner message="Loading…" py="py-12" />
           ) : filtered.length === 0 ? (
             <div className="bg-white rounded-2xl border border-[#e2e8f0] py-14 flex flex-col items-center gap-2 text-[#94a3b8]">
               <span className="material-symbols-outlined text-[36px]" style={{ fontVariationSettings: "'FILL' 1" }}>history</span>

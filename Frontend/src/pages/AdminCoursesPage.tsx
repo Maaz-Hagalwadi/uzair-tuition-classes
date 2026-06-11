@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { ADMIN_NAV } from '../lib/adminNav';
 export { ADMIN_NAV };
 import api, { apiGet } from '../lib/api';
@@ -215,10 +216,7 @@ export default function AdminCoursesPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-32 text-[#787680]">
-            <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-            Loading courses…
-          </div>
+          <LogoSpinner message="Loading courses…" py="py-32" />
         ) : isError ? (
           <div className="flex items-center justify-center py-32 text-[#93000a]">
             <span className="material-symbols-outlined text-[24px] mr-2">error</span>

@@ -34,6 +34,16 @@ public class ClassSessionController {
         return sessionService.create(batchId, req, principal.getName());
     }
 
+    @PostMapping("/api/admin/batches/{batchId}/sessions/bulk")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<ClassSessionResponse> createBulk(
+            Principal principal,
+            @PathVariable Long batchId,
+            @Valid @RequestBody BulkSessionRequest req) {
+        return sessionService.createBulk(batchId, req, principal.getName());
+    }
+
     @PutMapping("/api/admin/sessions/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
     public ClassSessionResponse update(@PathVariable Long id, @Valid @RequestBody ClassSessionRequest req) {

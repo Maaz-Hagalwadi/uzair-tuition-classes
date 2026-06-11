@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { TEACHER_NAV } from '../lib/teacherNav';
 import api, { apiGet } from '../lib/api';
 
@@ -263,10 +264,7 @@ export default function TeacherMaterialsPage() {
         </div>
 
         {batchLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
-            <span className="material-symbols-outlined text-[24px] animate-spin mb-2">sync</span>
-            <p className="text-[13px]">Loading…</p>
-          </div>
+          <LogoSpinner py="py-16" />
         ) : courses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
             <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>folder_open</span>

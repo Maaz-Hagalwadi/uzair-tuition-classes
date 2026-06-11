@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { STUDENT_NAV } from '../lib/studentNav';
 import { apiGet } from '../lib/api';
 import { ATTENDANCE_STATUS_META } from '../lib/statusMeta';
@@ -116,10 +117,7 @@ export default function StudentAttendancePage() {
 
         {/* ── Content ── */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-24 text-[#94a3b8]">
-            <span className="material-symbols-outlined text-[28px] animate-spin mb-2">sync</span>
-            <p className="text-[13px]">Loading attendance…</p>
-          </div>
+          <LogoSpinner message="Loading attendance…" />
         ) : summaries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-[#94a3b8]">
             <div className="w-16 h-16 rounded-2xl bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-center mb-4">

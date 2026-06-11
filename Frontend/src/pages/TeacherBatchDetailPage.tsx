@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { TEACHER_NAV } from '../lib/teacherNav';
 import api, { apiGet } from '../lib/api';
 import { BATCH_STATUS_INLINE_META } from '../lib/statusMeta';
@@ -259,10 +260,7 @@ function AnnouncementsTab({ batchId }: { batchId: number }) {
       )}
 
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-12 text-[#94a3b8]">
-          <span className="material-symbols-outlined text-[20px] animate-spin mb-2">sync</span>
-          <p className="text-[13px]">Loading…</p>
-        </div>
+        <LogoSpinner message="Loading…" py="py-12" />
       ) : announcements.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-[#94a3b8]">
           <span className="material-symbols-outlined text-[36px] mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>campaign</span>
@@ -328,9 +326,7 @@ export default function TeacherBatchDetailPage() {
   if (batchLoading) {
     return (
       <DashboardShell navItems={TEACHER_NAV}>
-        <div className="flex items-center justify-center py-32 text-[#6b7280]">
-          <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>Loading…
-        </div>
+        <LogoSpinner message="Loading…" py="py-32" />
       </DashboardShell>
     );
   }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { STUDENT_NAV } from '../lib/studentNav';
 import api from '../lib/api';
 
@@ -144,10 +145,7 @@ export default function StudentSchedulePage() {
 
         {/* ── Content ── */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32 text-[#94a3b8]">
-            <span className="material-symbols-outlined text-[30px] animate-spin mb-2">sync</span>
-            <p className="text-[13px]">Loading sessions…</p>
-          </div>
+          <LogoSpinner message="Loading sessions…" py="py-32" />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-[#94a3b8]">
             <div className="w-14 h-14 rounded-2xl bg-[#f1f5f9] flex items-center justify-center mb-3">

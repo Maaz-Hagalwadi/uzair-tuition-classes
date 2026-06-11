@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
+import LogoSpinner from '../components/LogoSpinner';
 import { ADMIN_NAV } from '../lib/adminNav';
 import { apiGet } from '../lib/api';
 
@@ -89,10 +90,7 @@ export default function AdminReportsPage() {
   if (isLoading) {
     return (
       <DashboardShell navItems={ADMIN_NAV}>
-        <div className="flex items-center justify-center py-32 text-[#94a3b8]">
-          <span className="material-symbols-outlined text-[24px] animate-spin mr-2">sync</span>
-          <p className="text-[13px]">Loading analytics…</p>
-        </div>
+        <LogoSpinner message="Loading analytics…" py="py-32" />
       </DashboardShell>
     );
   }
