@@ -74,6 +74,21 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Password reset successfully. You can now login."));
     }
 
+    @PostMapping("/otp/send")
+    public ResponseEntity<Map<String, String>> sendOtp(@Valid @RequestBody OtpSendRequest request) {
+        authService.sendOtp(request.email());
+        return ResponseEntity.ok(Map.of("message", "OTP sent to your email. It expires in 10 minutes."));
+    }
+
+    @PostMapping("/otp/verify")
+    public ResponseEntity<AuthResponse> verifyOtp(@Valid @RequestBody OtpVerifyRequest request,
+                                                   HttpServletRequest httpRequest,
+                                                   HttpServletResponse response) {
+        AuthResult result = authService.verifyOtp(request, resolveIp(httpRequest), httpRequest.getHeader("User-Agent"));
+        setRefreshTokenCookie(response, result.refreshToken());
+        return ResponseEntity.ok(result.response());
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(
             @CookieValue(name = REFRESH_TOKEN_COOKIE, required = false) String refreshToken,

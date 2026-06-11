@@ -38,6 +38,28 @@ public class EmailService {
         ));
     }
 
+    public void sendOtpEmail(String toEmail, String otp, String firstName) {
+        String formatted = otp.substring(0, 3) + " " + otp.substring(3);
+        send(toEmail, "Your login code — Uzair Tuition Classes",
+                "<!DOCTYPE html><html><body style='margin:0;padding:0;background:#f4f4f8;font-family:Arial,sans-serif'>"
+                + "<table width='100%' cellpadding='0' cellspacing='0' style='padding:40px 0'><tr><td align='center'>"
+                + "<table width='560' cellpadding='0' cellspacing='0' style='background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)'>"
+                + "<tr><td style='background:#070235;padding:28px 40px;text-align:center'>"
+                + "<span style='color:#fff;font-size:20px;font-weight:bold;letter-spacing:-0.5px'>Uzair Tuition Classes</span></td></tr>"
+                + "<tr><td style='padding:36px 40px'>"
+                + "<h2 style='margin:0 0 16px;font-size:22px;color:#070235'>Your Login Code</h2>"
+                + "<p style='margin:0 0 28px;font-size:15px;color:#3c3c4e;line-height:1.6'>Hi " + firstName + ", use the code below to sign in. It expires in <strong>10 minutes</strong>.</p>"
+                + "<div style='background:#f4f4f8;border-radius:12px;padding:20px 40px;text-align:center;margin:0 0 24px'>"
+                + "<span style='font-size:44px;font-weight:bold;letter-spacing:10px;color:#070235;font-family:monospace'>" + formatted + "</span>"
+                + "</div>"
+                + "<p style='font-size:12px;color:#787680;margin:0'>If you didn't request this code, you can safely ignore this email.</p>"
+                + "</td></tr>"
+                + "<tr><td style='padding:20px 40px;border-top:1px solid #e4e2e6;text-align:center'>"
+                + "<p style='margin:0;font-size:12px;color:#787680'>© 2026 Uzair Tuition Classes. All rights reserved.</p>"
+                + "</td></tr></table></td></tr></table></body></html>"
+        );
+    }
+
     public void sendPasswordResetEmail(String toEmail, String token) {
         String link = frontendUrl + "/reset-password?token=" + token;
         send(toEmail, "Reset your password — Uzair Tuition Classes", html(

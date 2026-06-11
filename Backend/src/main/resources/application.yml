@@ -7,11 +7,18 @@ spring:
     username: ${DB_USERNAME:utc}
     password: ${DB_PASSWORD:admin1234}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 600000
 
   jpa:
     hibernate:
       ddl-auto: none
     show-sql: false
+    open-in-view: false
 
   flyway:
     enabled: true
@@ -51,6 +58,11 @@ spring:
 
 server:
   port: ${PORT:8090}
+  tomcat:
+    threads:
+      max: 20
+      min-spare: 4
+    accept-count: 50
 
 app:
   jwt:

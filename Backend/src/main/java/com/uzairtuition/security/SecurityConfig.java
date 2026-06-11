@@ -28,6 +28,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
     private final CustomUserDetailsService userDetailsService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final PasswordEncoder passwordEncoder;
@@ -47,6 +48,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/api/ping").permitAll()
                 .requestMatchers("/api/upload").hasAnyRole("ADMIN", "TEACHER")
                 .requestMatchers("/api/admin/courses/*/materials", "/api/admin/courses/*/materials/*").hasAnyRole("ADMIN", "TEACHER")
                 .requestMatchers("/api/admin/batches/*/sessions", "/api/admin/sessions/*").hasAnyRole("ADMIN", "TEACHER")
@@ -69,7 +71,8 @@ public class SecurityConfig {
                 .successHandler(oAuth2SuccessHandler)
             )
             .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

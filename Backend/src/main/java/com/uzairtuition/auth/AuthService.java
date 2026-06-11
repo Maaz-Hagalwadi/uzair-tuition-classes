@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
@@ -29,8 +30,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final String EMAIL_VERIFY_PREFIX = "email_verify:";
-    private static final String PWD_RESET_PREFIX    = "pwd_reset:";
+    private static final String EMAIL_VERIFY_PREFIX  = "email_verify:";
+    private static final String PWD_RESET_PREFIX     = "pwd_reset:";
+    private static final String OTP_PREFIX           = "otp:";
+    private static final String OTP_ATTEMPTS_PREFIX  = "otp_attempts:";
+    private static final int    OTP_EXPIRY_SECONDS   = 600;  // 10 minutes
+    private static final int    OTP_MAX_ATTEMPTS     = 5;
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -221,6 +226,74 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
         redis.delete(key);
+    }
+
+    // ─── OTP Login ───────────────────────────────────────────────────────────
+
+    public void sendOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("No account found with this email"));
+
+        if (!user.isEmailVerified()) {
+            throw new BadRequestException("Please verify your email before logging in");
+        }
+        if (!user.isActive()) {
+            throw new BadRequestException("Your account is pending admin approval");
+        }
+
+        String otp = String.format("%06d", new SecureRandom().nextInt(1_000_000));
+        redis.opsForValue().set(OTP_PREFIX + email, otp, OTP_EXPIRY_SECONDS, TimeUnit.SECONDS);
+        redis.delete(OTP_ATTEMPTS_PREFIX + email);
+        emailService.sendOtpEmail(email, otp, user.getFirstName());
+    }
+
+    @Transactional
+    public AuthResult verifyOtp(OtpVerifyRequest request, String ip, String userAgent) {
+        String key       = OTP_PREFIX + request.email();
+        String storedOtp = redis.opsForValue().get(key);
+
+        if (storedOtp == null) {
+            throw new BadRequestException("OTP has expired. Please request a new one.");
+        }
+
+        String attemptsKey = OTP_ATTEMPTS_PREFIX + request.email();
+        int attempts = parseAttempts(redis.opsForValue().get(attemptsKey));
+
+        if (attempts >= OTP_MAX_ATTEMPTS) {
+            redis.delete(key);
+            redis.delete(attemptsKey);
+            throw new BadRequestException("Too many incorrect attempts. Please request a new OTP.");
+        }
+
+        if (!storedOtp.equals(request.otp())) {
+            redis.opsForValue().set(attemptsKey, String.valueOf(attempts + 1),
+                    OTP_EXPIRY_SECONDS, TimeUnit.SECONDS);
+            throw new BadRequestException("Incorrect OTP. " + (OTP_MAX_ATTEMPTS - attempts - 1) + " attempts remaining.");
+        }
+
+        redis.delete(key);
+        redis.delete(attemptsKey);
+
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        loginHistoryRepository.save(LoginHistory.builder()
+                .user(user)
+                .ipAddress(ip)
+                .userAgent(userAgent)
+                .browser(parseBrowser(userAgent))
+                .os(parseOs(userAgent))
+                .device(parseDevice(userAgent))
+                .build());
+
+        String accessToken  = jwtService.generateAccessToken(toUserDetails(user));
+        String refreshToken = createRefreshToken(user);
+        return new AuthResult(buildResponse(accessToken, user), refreshToken);
+    }
+
+    private int parseAttempts(String val) {
+        try { return val != null ? Integer.parseInt(val) : 0; }
+        catch (NumberFormatException e) { return 0; }
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
