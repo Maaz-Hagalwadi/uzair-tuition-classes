@@ -24,16 +24,19 @@ public class ClassSessionService {
     private final NotificationService notificationService;
     private final EmailService emailService;
 
+    @Transactional(readOnly = true)
     public List<ClassSessionResponse> getBatchSessions(Long batchId) {
         return sessionRepository.findByBatchIdOrderBySessionDateAscStartTimeAsc(batchId)
                 .stream().map(ClassSessionResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ClassSessionResponse> getUpcomingForStudent(Long studentId) {
         return sessionRepository.findUpcomingForStudent(studentId, LocalDate.now())
                 .stream().map(ClassSessionResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ClassSessionResponse> getUpcomingForTeacher(Long teacherId) {
         return sessionRepository.findUpcomingForTeacher(teacherId, LocalDate.now())
                 .stream().map(ClassSessionResponse::from).toList();

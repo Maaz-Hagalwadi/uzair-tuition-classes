@@ -66,6 +66,7 @@ public class AnnouncementService {
         return response;
     }
 
+    @Transactional(readOnly = true)
     public List<AnnouncementResponse> getBatchAnnouncements(Long batchId) {
         return announcementRepository.findByBatchIdOrderByCreatedAtDesc(batchId)
                 .stream()
@@ -73,6 +74,7 @@ public class AnnouncementService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<AnnouncementResponse> getAll() {
         return announcementRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
@@ -80,6 +82,7 @@ public class AnnouncementService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<AnnouncementResponse> getStudentAnnouncements(Long studentId) {
         List<Long> batchIds = batchRepository.findByStudentId(studentId)
                 .stream()

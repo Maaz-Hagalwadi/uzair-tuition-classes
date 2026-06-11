@@ -60,6 +60,7 @@ public class AssignmentService {
         return AssignmentResponse.from(assignment, 0, null);
     }
 
+    @Transactional(readOnly = true)
     public List<AssignmentResponse> getTeacherAssignments(Long teacherId) {
         List<Batch> batches = batchRepository.findByTeacherId(teacherId);
         if (batches.isEmpty()) return List.of();
@@ -75,6 +76,7 @@ public class AssignmentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<SubmissionResponse> getAssignmentSubmissions(Long assignmentId, Long teacherId) {
         Assignment assignment = EntityFinder.findOrThrow(assignmentRepository.findById(assignmentId), "Assignment");
         verifyTeacherOwnsBatch(assignment.getBatch().getId(), teacherId);
@@ -108,6 +110,7 @@ public class AssignmentService {
     // Student methods
     // -------------------------------------------------------------------------
 
+    @Transactional(readOnly = true)
     public List<AssignmentResponse> getStudentAssignments(Long studentId) {
         List<Batch> batches = batchRepository.findByStudentId(studentId);
         if (batches.isEmpty()) return List.of();

@@ -30,6 +30,7 @@ public class AttendanceService {
 
     private static final Set<String> VALID_STATUSES = Set.of("PRESENT", "ABSENT", "LATE");
 
+    @Transactional(readOnly = true)
     public List<AttendanceResponse> getSessionAttendance(Long sessionId) {
         return attendanceRepository.findBySessionId(sessionId)
                 .stream().map(AttendanceResponse::from).toList();
@@ -61,11 +62,13 @@ public class AttendanceService {
         return saved.stream().map(AttendanceResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<AttendanceResponse> getStudentAttendance(Long studentId) {
         return attendanceRepository.findByStudentId(studentId)
                 .stream().map(AttendanceResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<StudentAttendanceSummary> getStudentSummary(Long studentId) {
         List<Attendance> records = attendanceRepository.findByStudentId(studentId);
 
@@ -76,6 +79,7 @@ public class AttendanceService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<StudentAttendanceSummary> getAllBatchSummaries() {
         List<Batch> batches = batchRepository.findAll();
         List<StudentAttendanceSummary> summaries = new ArrayList<>();
@@ -99,6 +103,7 @@ public class AttendanceService {
         return summaries;
     }
 
+    @Transactional(readOnly = true)
     public List<AttendanceResponse> getBatchAttendance(Long batchId) {
         List<ClassSession> sessions = classSessionRepository.findByBatchIdOrderBySessionDateDesc(batchId);
         return sessions.stream()

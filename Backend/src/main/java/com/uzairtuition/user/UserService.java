@@ -21,6 +21,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
+    @Transactional(readOnly = true)
     public List<UserResponse> getUsers(String role) {
         List<User> users = (role != null && !role.isBlank())
                 ? userRepository.findByRoleName(role.toUpperCase())
@@ -28,6 +29,7 @@ public class UserService {
         return users.stream().map(UserResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<UserResponse> getPendingTeachers() {
         return userRepository.findPendingTeachers().stream().map(UserResponse::from).toList();
     }

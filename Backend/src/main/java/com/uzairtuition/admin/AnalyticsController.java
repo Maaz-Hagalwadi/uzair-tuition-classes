@@ -28,6 +28,7 @@ public class AnalyticsController {
     private final PaymentRepository paymentRepository;
 
     @GetMapping
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public AnalyticsResponse getAnalytics() {
 
         // ── Counts ──────────────────────────────────────────────────────────

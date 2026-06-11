@@ -16,6 +16,7 @@ import com.uzairtuition.quiz.QuizAttemptRepository;
 import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,6 +42,7 @@ public class StudentProgressController {
 
     @GetMapping("/api/student/progress")
     @PreAuthorize("hasRole('STUDENT')")
+    @Transactional(readOnly = true)
     public ProgressResponse getProgress(Principal principal) {
 
         User student = EntityFinder.findOrThrow(
@@ -156,7 +158,13 @@ public class StudentProgressController {
             );
         }).toList();
 
+        int assignmentPct = totalAssignments > 0
+                ? (int) Math.round(submittedCount * 100.0 / totalAssignments) : 0;
+        int overallCompletionPct = (int) Math.round(
+                overallAttendancePct * 0.4 + assignmentPct * 0.4 + avgQuizScorePct * 0.2);
+
         return new ProgressResponse(
+                overallCompletionPct,
                 overallAttendancePct,
                 (int) totalAttended,
                 totalSessions,

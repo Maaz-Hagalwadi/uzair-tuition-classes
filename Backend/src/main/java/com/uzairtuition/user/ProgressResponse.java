@@ -5,6 +5,9 @@ import java.util.List;
 
 public record ProgressResponse(
 
+        // Overall completion
+        int overallCompletionPct,
+
         // Overall attendance
         int overallAttendancePct,
         int totalSessionsAttended,

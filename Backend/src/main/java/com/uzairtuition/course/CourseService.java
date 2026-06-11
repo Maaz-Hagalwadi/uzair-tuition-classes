@@ -21,18 +21,21 @@ public class CourseService {
     private final UserRepository userRepository;
     private final BatchStudentRepository batchStudentRepository;
 
+    @Transactional(readOnly = true)
     public List<CourseResponse> getAllCourses() {
         return courseRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(c -> CourseResponse.from(c, materialRepository.countByCourseId(c.getId())))
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<CourseResponse> getActiveCourses() {
         return courseRepository.findByStatusOrderByCreatedAtDesc("ACTIVE").stream()
                 .map(c -> CourseResponse.from(c, materialRepository.countByCourseId(c.getId())))
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public CourseResponse getCourse(Long id) {
         Course course = EntityFinder.findOrThrow(courseRepository.findById(id), "Course");
         return CourseResponse.from(course, materialRepository.countByCourseId(id));
@@ -70,6 +73,7 @@ public class CourseService {
         courseRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
     public List<CourseMaterialResponse> getStudentMaterials(Long courseId, String studentEmail) {
         EntityFinder.findOrThrow(courseRepository.findById(courseId), "Course");
         User student = EntityFinder.findOrThrow(userRepository.findByEmail(studentEmail), "User");
@@ -82,6 +86,7 @@ public class CourseService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<CourseMaterialResponse> getMaterials(Long courseId) {
         EntityFinder.findOrThrow(courseRepository.findById(courseId), "Course");
         return materialRepository.findByCourseIdOrderByCreatedAtDesc(courseId).stream()

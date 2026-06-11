@@ -64,6 +64,7 @@ public class EnrollmentService {
         return response;
     }
 
+    @Transactional(readOnly = true)
     public List<EnrollmentRequestResponse> getStudentRequests(String studentEmail) {
         User student = EntityFinder.findOrThrow(userRepository.findByEmail(studentEmail), "User");
         return requestRepository.findByStudentIdOrderByCreatedAtDesc(student.getId()).stream()
@@ -71,6 +72,7 @@ public class EnrollmentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<EnrollmentRequestResponse> getAllRequests(String status) {
         List<EnrollmentRequest> requests = (status != null && !status.isBlank())
                 ? requestRepository.findByStatusOrderByCreatedAtDesc(status.toUpperCase())
@@ -78,6 +80,7 @@ public class EnrollmentService {
         return requests.stream().map(EnrollmentRequestResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public long countPending() {
         return requestRepository.countByStatus("PENDING");
     }

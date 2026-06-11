@@ -50,6 +50,7 @@ public class QuizService {
         return QuizSummaryResponse.from(quiz, 0);
     }
 
+    @Transactional(readOnly = true)
     public List<QuizSummaryResponse> getTeacherBatchQuizzes(Long batchId) {
         return quizRepository.findByBatchIdOrderByCreatedAtDesc(batchId).stream()
                 .map(q -> {
@@ -59,6 +60,7 @@ public class QuizService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public QuizDetailResponse getQuizDetail(Long quizId) {
         Quiz quiz = EntityFinder.findOrThrow(quizRepository.findById(quizId), "Quiz");
         List<QuizQuestion> questions = quizQuestionRepository.findByQuizIdOrderByOrderIndexAsc(quizId);
@@ -135,6 +137,7 @@ public class QuizService {
     // Student methods
     // -------------------------------------------------------------------------
 
+    @Transactional(readOnly = true)
     public List<QuizSummaryResponse> getStudentQuizzes(Long studentId) {
         List<Batch> batches = batchRepository.findByStudentId(studentId);
         return batches.stream()
@@ -148,6 +151,7 @@ public class QuizService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public QuizDetailResponse getStudentQuizDetail(Long quizId) {
         Quiz quiz = EntityFinder.findOrThrow(quizRepository.findById(quizId), "Quiz");
         List<QuizQuestion> questions = quizQuestionRepository.findByQuizIdOrderByOrderIndexAsc(quizId);
@@ -185,6 +189,7 @@ public class QuizService {
         return AttemptResponse.from(quizAttemptRepository.save(attempt));
     }
 
+    @Transactional(readOnly = true)
     public List<AttemptResponse> getStudentAttempts(Long studentId) {
         return quizAttemptRepository.findByStudentIdOrderByStartedAtDesc(studentId).stream()
                 .map(AttemptResponse::from)

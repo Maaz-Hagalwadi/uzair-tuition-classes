@@ -23,12 +23,14 @@ public class BatchService {
     private final UserRepository userRepository;
     private final EnrollmentRequestRepository enrollmentRequestRepository;
 
+    @Transactional(readOnly = true)
     public List<BatchResponse> getUpcomingAndActiveBatches() {
         return batchRepository.findByStatusInOrderByStartDateDesc(List.of("UPCOMING", "ACTIVE")).stream()
                 .map(b -> BatchResponse.from(b, batchStudentRepository.countByBatchId(b.getId())))
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BatchResponse> getAllBatches(String status) {
         List<Batch> batches = (status != null && !status.isBlank())
                 ? batchRepository.findByStatusOrderByStartDateDesc(status.toUpperCase())
@@ -38,23 +40,27 @@ public class BatchService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public BatchResponse getBatch(Long id) {
         Batch batch = EntityFinder.findOrThrow(batchRepository.findById(id), "Batch");
         return BatchResponse.from(batch, batchStudentRepository.countByBatchId(id));
     }
 
+    @Transactional(readOnly = true)
     public List<BatchResponse> getTeacherBatches(Long teacherId) {
         return batchRepository.findByTeacherId(teacherId).stream()
                 .map(b -> BatchResponse.from(b, batchStudentRepository.countByBatchId(b.getId())))
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BatchResponse> getStudentBatches(Long studentId) {
         return batchRepository.findByStudentId(studentId).stream()
                 .map(b -> BatchResponse.from(b, batchStudentRepository.countByBatchId(b.getId())))
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BatchBrowseResponse> browseBatches(String studentEmail) {
         User student = EntityFinder.findOrThrow(userRepository.findByEmail(studentEmail), "User");
         return batchRepository.findByStatusInOrderByStartDateDesc(List.of("ACTIVE", "UPCOMING")).stream()
@@ -112,6 +118,7 @@ public class BatchService {
         batchRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
     public List<BatchStudentResponse> getStudents(Long batchId) {
         EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
         return batchStudentRepository.findByBatchIdOrderByEnrolledAtDesc(batchId).stream()

@@ -20,6 +20,7 @@ public class ProfileService {
     private final PasswordEncoder passwordEncoder;
     private final S3Service s3Service;
 
+    @Transactional(readOnly = true)
     public UserResponse getProfile(String email) {
         return UserResponse.from(EntityFinder.findOrThrow(userRepository.findByEmail(email), "User"));
     }

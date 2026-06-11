@@ -28,6 +28,7 @@ public class PaymentService {
     private final NotificationService notificationService;
     private final EmailService emailService;
 
+    @Transactional(readOnly = true)
     public List<PaymentResponse> getAll(String status) {
         List<Payment> payments = (status != null && !status.isBlank())
                 ? paymentRepository.findByStatusOrderByCreatedAtDesc(status.toUpperCase())
@@ -37,6 +38,7 @@ public class PaymentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<PaymentResponse> getStudentPayments(Long studentId) {
         return paymentRepository.findByStudentIdOrderByCreatedAtDesc(studentId).stream()
                 .map(PaymentResponse::from)

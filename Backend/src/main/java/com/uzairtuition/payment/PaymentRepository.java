@@ -20,8 +20,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status IN ('PENDING', 'OVERDUE')")
     BigDecimal sumPendingRevenue();
 
-    @Query("SELECT YEAR(p.createdAt) as yr, MONTH(p.createdAt) as mo, SUM(p.amount) as total " +
-           "FROM Payment p WHERE p.status = 'PAID' AND p.createdAt >= :since " +
-           "GROUP BY YEAR(p.createdAt), MONTH(p.createdAt) ORDER BY yr, mo")
+    @Query(value = "SELECT EXTRACT(YEAR FROM created_at) AS yr, EXTRACT(MONTH FROM created_at) AS mo, SUM(amount) AS total " +
+                   "FROM payments WHERE status = 'PAID' AND created_at >= :since " +
+                   "GROUP BY yr, mo ORDER BY yr, mo",
+           nativeQuery = true)
     List<Object[]> monthlyRevenue(@Param("since") LocalDateTime since);
 }
