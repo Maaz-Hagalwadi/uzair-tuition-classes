@@ -17,6 +17,8 @@ import StudentAttendancePage from './pages/StudentAttendancePage';
 import StudentAnnouncementsPage from './pages/StudentAnnouncementsPage';
 import StudentPaymentsPage from './pages/StudentPaymentsPage';
 import StudentAIPage from './pages/StudentAIPage';
+import StudentProgressPage from './pages/StudentProgressPage';
+import StudentAssignmentsPage from './pages/StudentAssignmentsPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherBatchesPage from './pages/TeacherBatchesPage';
 import TeacherBatchDetailPage from './pages/TeacherBatchDetailPage';
@@ -25,6 +27,7 @@ import TeacherMaterialsPage from './pages/TeacherMaterialsPage';
 import TeacherQuizzesPage from './pages/TeacherQuizzesPage';
 import TeacherQuizDetailPage from './pages/TeacherQuizDetailPage';
 import TeacherAttendancePage from './pages/TeacherAttendancePage';
+import TeacherAssignmentsPage from './pages/TeacherAssignmentsPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminLeadsPage from './pages/AdminLeadsPage';
@@ -72,6 +75,8 @@ export default function App() {
         <Route path="/student/attendance" element={T('STUDENT', <StudentAttendancePage />)} />
         <Route path="/student/announcements" element={T('STUDENT', <StudentAnnouncementsPage />)} />
         <Route path="/student/payments" element={T('STUDENT', <StudentPaymentsPage />)} />
+        <Route path="/student/assignments" element={T('STUDENT', <StudentAssignmentsPage />)} />
+        <Route path="/student/progress" element={T('STUDENT', <StudentProgressPage />)} />
         <Route path="/student/ai" element={T('STUDENT', <StudentAIPage />)} />
         <Route path="/student/profile" element={T('STUDENT', <ProfilePage />)} />
         <Route path="/student/settings" element={T('STUDENT', <SettingsPage />)} />
@@ -86,6 +91,7 @@ export default function App() {
         <Route path="/teacher/materials" element={T('TEACHER', <TeacherMaterialsPage />)} />
         <Route path="/teacher/quizzes" element={T('TEACHER', <TeacherQuizzesPage />)} />
         <Route path="/teacher/quizzes/:id" element={T('TEACHER', <TeacherQuizDetailPage />)} />
+        <Route path="/teacher/assignments" element={T('TEACHER', <TeacherAssignmentsPage />)} />
         <Route path="/teacher/batches/:batchId/sessions/:sessionId/attendance" element={T('TEACHER', <TeacherAttendancePage />)} />
         <Route path="/teacher/profile" element={T('TEACHER', <ProfilePage />)} />
         <Route path="/teacher/settings" element={T('TEACHER', <SettingsPage />)} />

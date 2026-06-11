@@ -141,6 +141,34 @@ public class BatchService {
     }
 
     @Transactional
+    public void bulkEnrollStudents(Long batchId, List<Long> studentIds, Long adminId) {
+        Batch batch = EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
+
+        for (Long studentId : studentIds) {
+            User student = EntityFinder.findOrThrow(userRepository.findById(studentId), "Student");
+
+            boolean isStudent = student.getRoles().stream().anyMatch(r -> r.getName().equals("STUDENT"));
+            if (!isStudent) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User " + studentId + " is not a student.");
+            }
+
+            // Skip already-enrolled students
+            if (batchStudentRepository.existsByBatchIdAndStudentId(batchId, studentId)) {
+                continue;
+            }
+
+            BatchStudent bs = BatchStudent.builder().batch(batch).student(student).build();
+            batchStudentRepository.save(bs);
+        }
+
+        long studentCount = batchStudentRepository.countByBatchId(batchId);
+        if (studentCount > batch.getMaxStudents()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Enrollment would exceed batch capacity of " + batch.getMaxStudents() + ".");
+        }
+    }
+
+    @Transactional
     public void removeStudent(Long batchId, Long studentId) {
         EntityFinder.findOrThrow(batchRepository.findById(batchId), "Batch");
         BatchStudent bs = EntityFinder.findOrThrow(

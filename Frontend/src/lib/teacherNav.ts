@@ -5,7 +5,8 @@ export const TEACHER_NAV: NavItem[] = [
   { icon: 'groups', label: 'My Batches', href: '/teacher/batches' },
   { icon: 'person_search', label: 'Students', href: '/teacher/students' },
   { icon: 'folder_open', label: 'Materials', href: '/teacher/materials' },
-  { icon: 'quiz',     label: 'Quizzes',  href: '/teacher/quizzes' },
+  { icon: 'quiz',           label: 'Quizzes',     href: '/teacher/quizzes' },
+  { icon: 'assignment',    label: 'Assignments', href: '/teacher/assignments' },
   { icon: 'settings', label: 'Settings', href: '/teacher/settings', bottom: true },
   { icon: 'help',     label: 'Support',  href: '/teacher/support',  bottom: true },
 ];

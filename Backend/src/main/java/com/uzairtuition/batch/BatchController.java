@@ -69,6 +69,14 @@ public class BatchController {
         return batchService.enrollStudent(id, studentId);
     }
 
+    @PostMapping("/api/admin/batches/{id}/students/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void bulkEnroll(@PathVariable Long id, @RequestBody BulkEnrollRequest req, Principal principal) {
+        var admin = userRepository.findByEmail(principal.getName()).orElseThrow();
+        batchService.bulkEnrollStudents(id, req.studentIds(), admin.getId());
+    }
+
     @DeleteMapping("/api/admin/batches/{id}/students/{studentId}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)

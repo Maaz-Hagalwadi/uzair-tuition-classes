@@ -170,6 +170,13 @@ public class AuthService {
 
         userRepository.save(user);
         redis.delete(key);
+
+        if ("PENDING".equals(user.getApprovalStatus())) {
+            String userName = user.getFirstName() + " " + user.getLastName();
+            String role = user.getRoles().stream().map(Role::getName).findFirst().orElse("User");
+            userRepository.findByRoleName("ADMIN").forEach(admin ->
+                    emailService.sendNewUserPendingApprovalToAdmin(admin.getEmail(), userName, user.getEmail(), role));
+        }
     }
 
     // ─── Refresh Token ───────────────────────────────────────────────────────

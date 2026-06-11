@@ -4,6 +4,7 @@ import com.resend.Resend;
 import com.resend.services.emails.model.CreateEmailOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -28,6 +29,7 @@ public class EmailService {
 
     // ── Auth ─────────────────────────────────────────────────────────────────
 
+    @Async
     public void sendVerificationEmail(String toEmail, String token) {
         String link = frontendUrl + "/verify-email?token=" + token;
         send(toEmail, "Verify your email — Uzair Tuition Classes", html(
@@ -38,6 +40,7 @@ public class EmailService {
         ));
     }
 
+    @Async
     public void sendOtpEmail(String toEmail, String otp, String firstName) {
         String formatted = otp.substring(0, 3) + " " + otp.substring(3);
         send(toEmail, "Your login code — Uzair Tuition Classes",
@@ -60,6 +63,7 @@ public class EmailService {
         );
     }
 
+    @Async
     public void sendPasswordResetEmail(String toEmail, String token) {
         String link = frontendUrl + "/reset-password?token=" + token;
         send(toEmail, "Reset your password — Uzair Tuition Classes", html(
@@ -70,6 +74,20 @@ public class EmailService {
         ));
     }
 
+    @Async
+    public void sendNewUserPendingApprovalToAdmin(String toEmail, String userName, String userEmail, String role) {
+        send(toEmail, "New " + role.toLowerCase() + " registration pending approval — Uzair Tuition Classes", html(
+                "New Registration Pending Approval",
+                "A new <strong>" + role.toLowerCase() + "</strong> has registered and verified their email."
+                        + "<br><br><strong>Name:</strong> " + userName
+                        + "<br><strong>Email:</strong> " + userEmail
+                        + "<br><br>Please review and approve or reject their account.",
+                "Review Account", frontendUrl + "/admin/users",
+                null
+        ));
+    }
+
+    @Async
     public void sendTeacherApprovalEmail(String toEmail, String firstName) {
         send(toEmail, "Your teacher account has been approved — Uzair Tuition Classes", html(
                 "Account Approved, " + firstName + "!",
@@ -81,6 +99,7 @@ public class EmailService {
 
     // ── Enrollment ───────────────────────────────────────────────────────────
 
+    @Async
     public void sendEnrollmentRequestToAdmin(String toEmail, String studentName, String batchName) {
         send(toEmail, "New enrollment request — " + batchName, html(
                 "New Enrollment Request",
@@ -91,6 +110,7 @@ public class EmailService {
         ));
     }
 
+    @Async
     public void sendEnrollmentApprovedEmail(String toEmail, String firstName, String batchName) {
         send(toEmail, "You're enrolled in " + batchName + "!", html(
                 "Enrollment Approved!",
@@ -101,6 +121,7 @@ public class EmailService {
         ));
     }
 
+    @Async
     public void sendEnrollmentRejectedEmail(String toEmail, String firstName, String batchName, String note) {
         String reason = (note != null && !note.isBlank())
                 ? "Reason: " + note
@@ -116,6 +137,7 @@ public class EmailService {
 
     // ── Sessions ─────────────────────────────────────────────────────────────
 
+    @Async
     public void sendNewSessionEmail(String toEmail, String firstName, String title,
                                     LocalDate date, String startTime, String endTime,
                                     String meetingUrl, String platform) {
@@ -137,6 +159,7 @@ public class EmailService {
 
     // ── Announcements ─────────────────────────────────────────────────────────
 
+    @Async
     public void sendAnnouncementEmail(String toEmail, String firstName, String title,
                                       String content, String batchName) {
         String scope = batchName != null ? "for <strong>" + batchName + "</strong>" : "for all students";
@@ -151,6 +174,7 @@ public class EmailService {
 
     // ── Payments ─────────────────────────────────────────────────────────────
 
+    @Async
     public void sendPaymentUpdateEmail(String toEmail, String firstName, String batchName, String status) {
         String statusMsg = switch (status.toUpperCase()) {
             case "PAID"    -> "Your payment for <strong>" + batchName + "</strong> has been marked as <strong>Paid</strong>. Thank you!";
@@ -168,6 +192,7 @@ public class EmailService {
 
     // ── Leads ─────────────────────────────────────────────────────────────────
 
+    @Async
     public void sendNewLeadEmail(String toEmail, String leadName, String leadEmail,
                                  String phone, String course) {
         String courseText = course != null ? course : "a course";
