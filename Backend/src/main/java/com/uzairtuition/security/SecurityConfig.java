@@ -48,6 +48,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/api/actuator/health", "/api/actuator/info").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.HEAD, "/api/ping").permitAll()
                 .requestMatchers("/api/ping").permitAll()
                 .requestMatchers("/api/upload").hasAnyRole("ADMIN", "TEACHER")
                 .requestMatchers("/api/admin/courses/*/materials", "/api/admin/courses/*/materials/*").hasAnyRole("ADMIN", "TEACHER")
