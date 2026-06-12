@@ -17,6 +17,8 @@ interface LoginRecord {
   loggedInAt: string;
 }
 
+const PAGE_SIZE = 20;
+
 const DEVICE_ICON: Record<string, string> = {
   Mobile: 'smartphone',
   Tablet: 'tablet',
@@ -36,14 +38,59 @@ function timeAgo(iso: string) {
 function formatDate(iso: string) {
   const d = new Date(iso);
   return (
-    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' }) +
     ' · ' +
-    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) +
+    ' IST'
+  );
+}
+
+function Pagination({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages <= 1) return null;
+
+  const pages: (number | '...')[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (page > 3) pages.push('...');
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+    if (page < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
+  }
+
+  const from = (page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(page * PAGE_SIZE, total);
+
+  return (
+    <div className="flex items-center justify-between mt-4 px-1">
+      <p className="text-[12px] text-[#94a3b8]">Showing {from}–{to} of {total}</p>
+      <div className="flex items-center gap-1">
+        <button onClick={() => onChange(page - 1)} disabled={page === 1}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] hover:bg-[#f1f5f9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+          <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+        </button>
+        {pages.map((p, i) => p === '...' ? (
+          <span key={`e${i}`} className="w-7 h-7 flex items-center justify-center text-[12px] text-[#94a3b8]">…</span>
+        ) : (
+          <button key={p} onClick={() => onChange(p as number)}
+            className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-colors ${page === p ? 'bg-[#6366f1] text-white' : 'text-[#374151] hover:bg-[#f1f5f9]'}`}>
+            {p}
+          </button>
+        ))}
+        <button onClick={() => onChange(page + 1)} disabled={page === totalPages}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] hover:bg-[#f1f5f9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        </button>
+      </div>
+    </div>
   );
 }
 
 export default function AdminLoginHistoryPage() {
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
   const { data: logins = [], isLoading } = useQuery<LoginRecord[]>({
     queryKey: ['login-history'],
@@ -57,6 +104,8 @@ export default function AdminLoginHistoryPage() {
     l.userEmail.toLowerCase().includes(search.toLowerCase()) ||
     l.ipAddress.includes(search)
   );
+
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <DashboardShell navItems={ADMIN_NAV}>
@@ -87,7 +136,7 @@ export default function AdminLoginHistoryPage() {
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[#e2e8f0] text-[13px] text-[#0f172a] placeholder-[#94a3b8] bg-white focus:outline-none focus:ring-2 focus:ring-[#6366f1]/30"
             placeholder="Search by name, email, or IP…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
           />
         </div>
 
@@ -95,7 +144,7 @@ export default function AdminLoginHistoryPage() {
         <div className="hidden sm:block bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#f1f5f9] flex items-center justify-between">
             <h2 className="text-[14px] font-semibold text-[#0f172a]">Recent Logins</h2>
-            <span className="text-[12px] text-[#94a3b8]">Last 100 logins</span>
+            <span className="text-[12px] text-[#94a3b8]">{filtered.length} total</span>
           </div>
 
           <table className="w-full text-sm">
@@ -106,7 +155,7 @@ export default function AdminLoginHistoryPage() {
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider hidden md:table-cell">Browser</th>
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider hidden md:table-cell">OS</th>
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider hidden lg:table-cell">Device</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Time</th>
+                <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Time (IST)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
@@ -126,7 +175,7 @@ export default function AdminLoginHistoryPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map(l => (
+                paginated.map(l => (
                   <tr key={l.id} className="hover:bg-[#fafbff] transition-colors">
                     <td className="px-5 py-3">
                       <div>
@@ -165,12 +214,17 @@ export default function AdminLoginHistoryPage() {
             </tbody>
           </table>
         </div>
+        {!isLoading && filtered.length > PAGE_SIZE && (
+          <div className="hidden sm:block">
+            <Pagination page={page} total={filtered.length} onChange={setPage} />
+          </div>
+        )}
 
         {/* Cards — mobile only */}
         <div className="sm:hidden space-y-3">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-[13px] font-semibold text-[#0f172a]">Recent Logins</h2>
-            <span className="text-[11px] text-[#94a3b8]">Last 100</span>
+            <span className="text-[11px] text-[#94a3b8]">{filtered.length} total</span>
           </div>
 
           {isLoading ? (
@@ -181,43 +235,46 @@ export default function AdminLoginHistoryPage() {
               <p className="text-[13px]">{search ? 'No results found' : 'No login history yet'}</p>
             </div>
           ) : (
-            filtered.map(l => (
-              <div key={l.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-4 space-y-3">
-                {/* User + time */}
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-[13px] font-semibold text-[#0f172a]">{l.userName}</p>
-                    <p className="text-[11px] text-[#64748b] mt-0.5">{l.userEmail}</p>
+            <>
+              {paginated.map(l => (
+                <div key={l.id} className="bg-white rounded-2xl border border-[#e2e8f0] p-4 space-y-3">
+                  {/* User + time */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-[13px] font-semibold text-[#0f172a]">{l.userName}</p>
+                      <p className="text-[11px] text-[#64748b] mt-0.5">{l.userEmail}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[12px] font-medium text-[#374151]">{timeAgo(l.loggedInAt)}</p>
+                      <p className="text-[10px] text-[#94a3b8] mt-0.5">{formatDate(l.loggedInAt)}</p>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[12px] font-medium text-[#374151]">{timeAgo(l.loggedInAt)}</p>
-                    <p className="text-[10px] text-[#94a3b8] mt-0.5">{formatDate(l.loggedInAt)}</p>
+
+                  {/* IP */}
+                  <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#374151]">
+                    <span className="material-symbols-outlined text-[13px] text-[#94a3b8]">location_on</span>
+                    {l.ipAddress || '—'}
+                  </div>
+
+                  {/* Browser / OS / Device chips */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f1f5f9] text-[11px] text-[#475569]">
+                      <span className="material-symbols-outlined text-[12px]">travel_explore</span>
+                      {l.browser}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f1f5f9] text-[11px] text-[#475569]">
+                      <span className="material-symbols-outlined text-[12px]">desktop_windows</span>
+                      {l.os}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f1f5f9] text-[11px] text-[#475569]">
+                      <span className="material-symbols-outlined text-[12px]">{DEVICE_ICON[l.device] ?? 'devices'}</span>
+                      {l.device}
+                    </span>
                   </div>
                 </div>
-
-                {/* IP */}
-                <div className="flex items-center gap-1.5 text-[12px] font-mono text-[#374151]">
-                  <span className="material-symbols-outlined text-[13px] text-[#94a3b8]">location_on</span>
-                  {l.ipAddress || '—'}
-                </div>
-
-                {/* Browser / OS / Device chips */}
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f1f5f9] text-[11px] text-[#475569]">
-                    <span className="material-symbols-outlined text-[12px]">travel_explore</span>
-                    {l.browser}
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f1f5f9] text-[11px] text-[#475569]">
-                    <span className="material-symbols-outlined text-[12px]">desktop_windows</span>
-                    {l.os}
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f1f5f9] text-[11px] text-[#475569]">
-                    <span className="material-symbols-outlined text-[12px]">{DEVICE_ICON[l.device] ?? 'devices'}</span>
-                    {l.device}
-                  </span>
-                </div>
-              </div>
-            ))
+              ))}
+              <Pagination page={page} total={filtered.length} onChange={setPage} />
+            </>
           )}
         </div>
       </div>

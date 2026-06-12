@@ -7,6 +7,7 @@ export const TEACHER_NAV: NavItem[] = [
   { icon: 'folder_open', label: 'Materials', href: '/teacher/materials' },
   { icon: 'quiz',           label: 'Quizzes',     href: '/teacher/quizzes' },
   { icon: 'assignment',    label: 'Assignments', href: '/teacher/assignments' },
+  { icon: 'campaign',     label: 'Announcements', href: '/teacher/announcements' },
   { icon: 'auto_awesome', label: 'AI Tools', href: '/teacher/ai' },
   { icon: 'settings', label: 'Settings', href: '/teacher/settings', bottom: true },
   { icon: 'help',     label: 'Support',  href: '/teacher/support',  bottom: true },

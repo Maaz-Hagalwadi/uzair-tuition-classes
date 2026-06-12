@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardShell from '../components/DashboardShell';
 import LogoSpinner from '../components/LogoSpinner';
@@ -21,6 +22,8 @@ interface Stats {
   visitsToday: number;
   uniqueThisWeek: number;
 }
+
+const PAGE_SIZE = 20;
 
 const DEVICE_ICON: Record<string, string> = {
   Mobile: 'smartphone',
@@ -49,11 +52,60 @@ function timeAgo(iso: string) {
 
 function formatDate(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return (
+    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' }) +
+    ' · ' +
+    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) +
+    ' IST'
+  );
+}
+
+function Pagination({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages <= 1) return null;
+
+  const pages: (number | '...')[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (page > 3) pages.push('...');
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+    if (page < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
+  }
+
+  const from = (page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(page * PAGE_SIZE, total);
+
+  return (
+    <div className="flex items-center justify-between mt-4 px-1">
+      <p className="text-[12px] text-[#94a3b8]">Showing {from}–{to} of {total}</p>
+      <div className="flex items-center gap-1">
+        <button onClick={() => onChange(page - 1)} disabled={page === 1}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] hover:bg-[#f1f5f9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+          <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+        </button>
+        {pages.map((p, i) => p === '...' ? (
+          <span key={`e${i}`} className="w-7 h-7 flex items-center justify-center text-[12px] text-[#94a3b8]">…</span>
+        ) : (
+          <button key={p} onClick={() => onChange(p as number)}
+            className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-colors ${page === p ? 'bg-[#6366f1] text-white' : 'text-[#374151] hover:bg-[#f1f5f9]'}`}>
+            {p}
+          </button>
+        ))}
+        <button onClick={() => onChange(page + 1)} disabled={page === totalPages}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] hover:bg-[#f1f5f9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function AdminVisitorsPage() {
+  const [page, setPage] = useState(1);
+
   const { data: stats, isLoading: sl } = useQuery<Stats>({
     queryKey: ['visitors-stats'],
     queryFn: async () => (await api.get('/admin/visitors/stats')).data,
@@ -66,11 +118,13 @@ export default function AdminVisitorsPage() {
     refetchInterval: 60000,
   });
 
+  const paginated = visits.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const statCards = [
-    { label: 'Total Visits',      value: stats?.totalVisits    ?? 0, icon: 'visibility',     bg: '#eff6ff', color: '#1d4ed8' },
-    { label: 'Unique Visitors',   value: stats?.uniqueVisitors ?? 0, icon: 'people',          bg: '#f0fdf4', color: '#15803d' },
-    { label: 'Visits Today',      value: stats?.visitsToday    ?? 0, icon: 'today',           bg: '#fffbeb', color: '#d97706' },
-    { label: 'Unique This Week',  value: stats?.uniqueThisWeek ?? 0, icon: 'date_range',      bg: '#f5f3ff', color: '#7c3aed' },
+    { label: 'Total Visits',      value: stats?.totalVisits    ?? 0, icon: 'visibility',  bg: '#eff6ff', color: '#1d4ed8' },
+    { label: 'Unique Visitors',   value: stats?.uniqueVisitors ?? 0, icon: 'people',       bg: '#f0fdf4', color: '#15803d' },
+    { label: 'Visits Today',      value: stats?.visitsToday    ?? 0, icon: 'today',        bg: '#fffbeb', color: '#d97706' },
+    { label: 'Unique This Week',  value: stats?.uniqueThisWeek ?? 0, icon: 'date_range',   bg: '#f5f3ff', color: '#7c3aed' },
   ];
 
   return (
@@ -112,7 +166,7 @@ export default function AdminVisitorsPage() {
         <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#f1f5f9] flex items-center justify-between">
             <h2 className="text-[14px] font-semibold text-[#0f172a]">Recent Visitors</h2>
-            <span className="text-[12px] text-[#94a3b8]">Last 50 visits</span>
+            <span className="text-[12px] text-[#94a3b8]">{visits.length} total</span>
           </div>
           <table className="w-full text-sm">
             <thead>
@@ -122,7 +176,7 @@ export default function AdminVisitorsPage() {
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider hidden md:table-cell">OS</th>
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider hidden md:table-cell">Device</th>
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider hidden lg:table-cell">Referrer</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Time</th>
+                <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">Time (IST)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
@@ -142,7 +196,7 @@ export default function AdminVisitorsPage() {
                   </td>
                 </tr>
               ) : (
-                visits.map(v => (
+                paginated.map(v => (
                   <tr key={v.id} className="hover:bg-[#fafbff] transition-colors">
                     <td className="px-5 py-3">
                       <span className="inline-flex items-center gap-1.5 text-[12px] font-mono text-[#374151]">
@@ -178,6 +232,9 @@ export default function AdminVisitorsPage() {
             </tbody>
           </table>
         </div>
+        {!vl && visits.length > PAGE_SIZE && (
+          <Pagination page={page} total={visits.length} onChange={setPage} />
+        )}
       </div>
     </DashboardShell>
   );

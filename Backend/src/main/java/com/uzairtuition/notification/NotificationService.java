@@ -1,5 +1,6 @@
 package com.uzairtuition.notification;
 
+import com.uzairtuition.push.PushNotificationService;
 import com.uzairtuition.user.User;
 import com.uzairtuition.util.EntityFinder;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.Map;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final PushNotificationService pushNotificationService;
 
     @Transactional
     public void createForUser(User user, String type, String title, String message, Long relatedId) {
@@ -28,6 +30,7 @@ public class NotificationService {
                         .relatedId(relatedId)
                         .build()
         );
+        pushNotificationService.sendToUser(user.getId(), title, message);
     }
 
     public List<NotificationResponse> getForUser(Long userId) {

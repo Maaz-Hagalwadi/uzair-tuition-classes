@@ -3,6 +3,7 @@ import api from '../lib/api';
 import Navbar from '../components/landing/Navbar';
 import Hero from '../components/landing/Hero';
 import WhyChooseUs from '../components/landing/WhyChooseUs';
+import PlatformFeatures from '../components/landing/PlatformFeatures';
 import FeaturedCourses from '../components/landing/FeaturedCourses';
 import UpcomingBatches from '../components/landing/UpcomingBatches';
 import Testimonials from '../components/landing/Testimonials';
@@ -19,6 +20,7 @@ export default function LandingPage() {
       <Navbar />
       <Hero />
       <WhyChooseUs />
+      <PlatformFeatures />
       <FeaturedCourses />
       <UpcomingBatches />
       <Testimonials />

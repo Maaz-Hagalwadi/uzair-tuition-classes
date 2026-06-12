@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import GuestRoute from './components/GuestRoute';
+import PushNotificationInit from './components/PushNotificationInit';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -28,6 +29,7 @@ import TeacherQuizzesPage from './pages/TeacherQuizzesPage';
 import TeacherQuizDetailPage from './pages/TeacherQuizDetailPage';
 import TeacherAttendancePage from './pages/TeacherAttendancePage';
 import TeacherAssignmentsPage from './pages/TeacherAssignmentsPage';
+import TeacherAnnouncementsPage from './pages/TeacherAnnouncementsPage';
 import TeacherAIPage from './pages/TeacherAIPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersPage from './pages/AdminUsersPage';
@@ -41,6 +43,8 @@ import AdminPaymentsPage from './pages/AdminPaymentsPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import SupportPage from './pages/SupportPage';
+import AdminSupportPage from './pages/AdminSupportPage';
+import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import AdminVisitorsPage from './pages/AdminVisitorsPage';
 import AdminLoginHistoryPage from './pages/AdminLoginHistoryPage';
@@ -55,6 +59,7 @@ function T(role: 'STUDENT' | 'TEACHER' | 'ADMIN', el: React.ReactNode) {
 export default function App() {
   return (
     <BrowserRouter>
+      <PushNotificationInit />
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
@@ -94,6 +99,7 @@ export default function App() {
         <Route path="/teacher/quizzes" element={T('TEACHER', <TeacherQuizzesPage />)} />
         <Route path="/teacher/quizzes/:id" element={T('TEACHER', <TeacherQuizDetailPage />)} />
         <Route path="/teacher/assignments" element={T('TEACHER', <TeacherAssignmentsPage />)} />
+        <Route path="/teacher/announcements" element={T('TEACHER', <TeacherAnnouncementsPage />)} />
         <Route path="/teacher/ai" element={T('TEACHER', <TeacherAIPage />)} />
         <Route path="/teacher/batches/:batchId/sessions/:sessionId/attendance" element={T('TEACHER', <TeacherAttendancePage />)} />
         <Route path="/teacher/profile" element={T('TEACHER', <ProfilePage />)} />
@@ -114,7 +120,8 @@ export default function App() {
         <Route path="/admin/payments" element={T('ADMIN', <AdminPaymentsPage />)} />
         <Route path="/admin/profile" element={T('ADMIN', <ProfilePage />)} />
         <Route path="/admin/settings" element={T('ADMIN', <SettingsPage />)} />
-        <Route path="/admin/support" element={T('ADMIN', <SupportPage />)} />
+        <Route path="/admin/support" element={T('ADMIN', <AdminSupportPage />)} />
+        <Route path="/admin/announcements" element={T('ADMIN', <AdminAnnouncementsPage />)} />
         <Route path="/admin/notifications" element={T('ADMIN', <NotificationsPage />)} />
         <Route path="/admin/visitors" element={T('ADMIN', <AdminVisitorsPage />)} />
         <Route path="/admin/login-history" element={T('ADMIN', <AdminLoginHistoryPage />)} />

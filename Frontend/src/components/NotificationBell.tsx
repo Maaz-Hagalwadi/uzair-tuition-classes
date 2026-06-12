@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
@@ -22,9 +23,11 @@ const TYPE_META: Record<string, { icon: string; color: string; bg: string }> = {
   NEW_SESSION:         { icon: 'calendar_month',   color: '#2563eb', bg: '#eff6ff' },
   PAYMENT_UPDATED:     { icon: 'payments',         color: '#d97706', bg: '#fffbeb' },
   NEW_LEAD:            { icon: 'contact_phone',    color: '#0f172a', bg: '#f1f5f9' },
-  ASSIGNMENT_CREATED:  { icon: 'assignment',       color: '#7c3aed', bg: '#f5f3ff' },
-  ASSIGNMENT_GRADED:   { icon: 'grading',          color: '#0891b2', bg: '#ecfeff' },
-  QUIZ_PUBLISHED:      { icon: 'quiz',             color: '#16a34a', bg: '#f0fdf4' },
+  ASSIGNMENT_CREATED:     { icon: 'assignment',    color: '#7c3aed', bg: '#f5f3ff' },
+  ASSIGNMENT_GRADED:      { icon: 'grading',       color: '#0891b2', bg: '#ecfeff' },
+  QUIZ_PUBLISHED:         { icon: 'quiz',          color: '#16a34a', bg: '#f0fdf4' },
+  SUPPORT_TICKET_CREATED: { icon: 'support_agent', color: '#0891b2', bg: '#ecfeff' },
+  SUPPORT_REPLY:          { icon: 'reply',         color: '#7c3aed', bg: '#f5f3ff' },
 };
 
 function timeAgo(iso: string) {
@@ -47,21 +50,37 @@ function getNotificationLink(type: string, role: string): string {
     case 'NEW_SESSION':         return r === 'student' ? '/student/schedule' : `/${r}/batches`;
     case 'PAYMENT_UPDATED':     return r === 'student' ? '/student/payments' : '/admin/payments';
     case 'NEW_LEAD':            return '/admin/leads';
-    case 'ASSIGNMENT_CREATED':  return r === 'student' ? '/student/assignments' : `/${r}/assignments`;
-    case 'ASSIGNMENT_GRADED':   return '/student/assignments';
-    case 'QUIZ_PUBLISHED':      return r === 'student' ? '/student/quizzes' : `/${r}/quizzes`;
-    default:                    return `/${r}`;
+    case 'ASSIGNMENT_CREATED':     return r === 'student' ? '/student/assignments' : `/${r}/assignments`;
+    case 'ASSIGNMENT_GRADED':      return '/student/assignments';
+    case 'QUIZ_PUBLISHED':         return r === 'student' ? '/student/quizzes' : `/${r}/quizzes`;
+    case 'SUPPORT_TICKET_CREATED': return '/admin/support';
+    case 'SUPPORT_REPLY':          return `/${r}/support`;
+    default:                       return `/${r}`;
   }
 }
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 320 });
+  const ref      = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const qc  = useQueryClient();
   const navigate = useNavigate();
   const user = useAuthStore(s => s.user);
   const role = user?.roles?.[0] ?? 'STUDENT';
   const notifPath = `/${role.toLowerCase()}/notifications`;
+
+  function toggleOpen() {
+    if (!open && buttonRef.current) {
+      const r   = buttonRef.current.getBoundingClientRect();
+      const vw  = window.innerWidth;
+      const gap = 8;
+      const w   = Math.min(320, vw - gap * 2);   // shrink on very small screens
+      const left = Math.max(gap, r.right - w);    // right-align to button, clamp left
+      setDropPos({ top: r.bottom + 8, left, width: w });
+    }
+    setOpen(p => !p);
+  }
 
   const { data: countData } = useQuery<{ count: number }>({
     queryKey: ['notification-unread-count'],
@@ -93,7 +112,10 @@ export default function NotificationBell() {
 
   useEffect(() => {
     function onOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      const outsideButton = !buttonRef.current?.contains(target);
+      const outsideDrop   = !ref.current?.contains(target);
+      if (outsideButton && outsideDrop) setOpen(false);
     }
     if (open) document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
@@ -102,9 +124,10 @@ export default function NotificationBell() {
   const unread = countData?.count ?? 0;
 
   return (
-    <div className="relative" ref={ref}>
+    <div>
       <button
-        onClick={() => setOpen(p => !p)}
+        ref={buttonRef}
+        onClick={toggleOpen}
         className="relative flex items-center justify-center w-8 h-8 rounded-lg text-[#6b7280] hover:bg-[#f8fafc] hover:text-[#111827] transition-colors"
       >
         <span className="material-symbols-outlined text-[19px]" style={{ fontVariationSettings: "'wght' 300" }}>
@@ -117,8 +140,12 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-[#e8eaf0] shadow-xl z-50 overflow-hidden">
+      {open && createPortal(
+        <div
+          ref={ref}
+          style={{ position: 'fixed', top: dropPos.top, left: dropPos.left, width: dropPos.width, zIndex: 9999 }}
+          className="bg-white rounded-2xl border border-[#e8eaf0] shadow-xl overflow-hidden"
+        >
 
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#f1f5f9]">
@@ -195,7 +222,8 @@ export default function NotificationBell() {
               View all notifications
             </Link>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

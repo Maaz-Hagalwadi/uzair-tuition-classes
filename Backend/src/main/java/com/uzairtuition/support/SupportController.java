@@ -1,55 +1,60 @@
 package com.uzairtuition.support;
 
-import com.uzairtuition.lead.Lead;
-import com.uzairtuition.lead.LeadRepository;
-import com.uzairtuition.notification.NotificationService;
-import com.uzairtuition.user.User;
-import com.uzairtuition.user.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/support")
 @RequiredArgsConstructor
 public class SupportController {
 
-    private final UserRepository userRepository;
-    private final LeadRepository leadRepository;
-    private final NotificationService notificationService;
+    private final SupportService supportService;
 
-    @PostMapping("/message")
-    public ResponseEntity<Map<String, String>> submitMessage(
-            Principal principal,
-            @Valid @RequestBody SupportMessageRequest req) {
+    // ── Student / Teacher ─────────────────────────────────────────────────────
 
-        User user = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+    @PostMapping("/api/support/tickets")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER')")
+    public TicketResponse createTicket(@Valid @RequestBody TicketRequest req, Principal principal) {
+        return supportService.createTicket(req.subject(), req.message(), principal.getName());
+    }
 
-        Lead lead = Lead.builder()
-                .fullName(user.getFirstName() + " " + user.getLastName())
-                .email(user.getEmail())
-                .phone(user.getPhone() != null ? user.getPhone() : "—")
-                .interestedCourse("[Support] " + req.subject())
-                .message(req.message())
-                .status("NEW")
-                .build();
-        Lead saved = leadRepository.save(lead);
+    @GetMapping("/api/support/tickets")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER')")
+    public List<TicketResponse> getMyTickets(Principal principal) {
+        return supportService.getStudentTickets(principal.getName());
+    }
 
-        userRepository.findByRoleName("ADMIN")
-                .forEach(admin -> notificationService.createForUser(
-                        admin, "NEW_LEAD",
-                        "Support Request: " + req.subject(),
-                        user.getFirstName() + " " + user.getLastName() + " submitted a support request.",
-                        saved.getId()
-                ));
+    @GetMapping("/api/support/tickets/{id}")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER','ADMIN')")
+    public ThreadResponse getThread(@PathVariable Long id, Principal principal) {
+        return supportService.getThread(id, principal.getName());
+    }
 
-        return ResponseEntity.ok(Map.of("message", "Message sent successfully."));
+    @PostMapping("/api/support/tickets/{id}/messages")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER','ADMIN')")
+    public MessageResponse addMessage(@PathVariable Long id,
+                                      @Valid @RequestBody MessageRequest req,
+                                      Principal principal) {
+        return supportService.addMessage(id, req.message(), principal.getName());
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────────────────
+
+    @GetMapping("/api/admin/support/tickets")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<TicketResponse> getAllTickets() {
+        return supportService.getAllTickets();
+    }
+
+    @PutMapping("/api/admin/support/tickets/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public TicketResponse updateStatus(@PathVariable Long id,
+                                       @RequestBody Map<String, String> body) {
+        return supportService.updateStatus(id, body.getOrDefault("status", "OPEN"));
     }
 }

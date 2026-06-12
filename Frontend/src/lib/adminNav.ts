@@ -8,6 +8,7 @@ export const ADMIN_NAV: NavItem[] = [
   { icon: 'groups', label: 'Batches', href: '/admin/batches' },
   { icon: 'assignment_turned_in', label: 'Enrollments', href: '/admin/enrollments' },
   { icon: 'payments',  label: 'Payments',  href: '/admin/payments' },
+  { icon: 'campaign',  label: 'Announcements', href: '/admin/announcements' },
   { icon: 'bar_chart', label: 'Reports', href: '/admin/reports' },
   { icon: 'visibility', label: 'Visitors', href: '/admin/visitors' },
   { icon: 'history', label: 'Login History', href: '/admin/login-history' },
